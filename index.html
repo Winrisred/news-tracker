@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI & BigTech News Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0C1B2A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
   <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96.png">
   <link rel="icon" type="image/png" sizes="48x48" href="images/favicon-48.png">
@@ -1222,6 +1226,11 @@
       loadDemo();
     } else {
       loadData();
+    }
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
     }
   </script>
 </body>
