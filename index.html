@@ -492,9 +492,104 @@
         grid-template-columns: repeat(3, 1fr);
       }
     }
+    /* ── PWA Install Banner ──────────────────────── */
+    .pwa-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9999;
+      background: var(--navy-light);
+      border-bottom: 2px solid rgba(230, 57, 70, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      animation: pwa-slide-down 0.4s ease-out;
+    }
+
+    @keyframes pwa-slide-down {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+
+    .pwa-banner-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pwa-banner-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .pwa-banner-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .pwa-banner-text strong {
+      color: var(--white);
+      font-size: 0.95rem;
+    }
+
+    .pwa-banner-sub {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .pwa-banner-btn {
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .pwa-banner-btn:hover {
+      background: var(--red-dark);
+    }
+
+    .pwa-banner-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .pwa-banner-close:hover {
+      color: var(--white);
+    }
   </style>
 </head>
 <body>
+
+  <!-- PWA Install Banner -->
+  <div id="pwa-banner" class="pwa-banner" style="display:none;">
+    <div class="pwa-banner-content">
+      <img src="images/favicon-96.png" class="pwa-banner-icon" alt="App icon">
+      <div class="pwa-banner-text">
+        <strong>Install AI News Tracker</strong>
+        <span class="pwa-banner-sub" id="pwa-instructions">Get quick access from your home screen</span>
+      </div>
+      <button id="pwa-install-btn" class="pwa-banner-btn">Install</button>
+      <button id="pwa-close-btn" class="pwa-banner-close" aria-label="Close">&times;</button>
+    </div>
+  </div>
 
   <header>
     <div class="header-inner">
@@ -1228,10 +1323,85 @@
       loadData();
     }
 
-    // Register Service Worker for PWA
+    // ── PWA Install Logic ─────────────────────────
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
+
+    // Detect platform
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || navigator.standalone === true;
+
+    let deferredPrompt = null;
+    const banner = document.getElementById('pwa-banner');
+    const installBtn = document.getElementById('pwa-install-btn');
+    const closeBtn = document.getElementById('pwa-close-btn');
+    const instructions = document.getElementById('pwa-instructions');
+
+    // Don't show if already installed or dismissed recently
+    function showBanner() {
+      if (isStandalone) return;
+      if (localStorage.getItem('pwa-dismissed')) {
+        const dismissed = parseInt(localStorage.getItem('pwa-dismissed'));
+        if (Date.now() - dismissed < 7 * 24 * 60 * 60 * 1000) return; // 7 days
+      }
+      banner.style.display = 'block';
+    }
+
+    // Chrome/Edge: native install prompt
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.textContent = 'Install';
+      instructions.textContent = 'Get quick access from your home screen';
+      showBanner();
+    });
+
+    // iOS: show manual instructions
+    if (isIOS && !isStandalone) {
+      installBtn.textContent = 'How to';
+      instructions.innerHTML = 'Tap <strong>Share</strong> ↑ then <strong>"Add to Home Screen"</strong>';
+      installBtn.addEventListener('click', () => {
+        instructions.innerHTML = '1. Tap the <strong>Share</strong> button ↑ (bottom bar)<br>2. Scroll down and tap <strong>"Add to Home Screen"</strong>';
+        installBtn.style.display = 'none';
+      });
+      showBanner();
+    }
+
+    // Android without prompt (e.g. Firefox)
+    if (isAndroid && !deferredPrompt && !isStandalone) {
+      installBtn.textContent = 'How to';
+      instructions.innerHTML = 'Tap <strong>Menu &#8942;</strong> then <strong>"Add to Home Screen"</strong>';
+      installBtn.addEventListener('click', () => {
+        instructions.innerHTML = '1. Tap the <strong>&#8942; menu</strong> (top right)<br>2. Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>';
+        installBtn.style.display = 'none';
+      });
+      showBanner();
+    }
+
+    // Desktop: show for Chrome/Edge
+    if (!isIOS && !isAndroid && !isStandalone) {
+      // Will be shown when beforeinstallprompt fires
+    }
+
+    // Install button (native prompt)
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === 'accepted') {
+        banner.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+
+    // Close button
+    closeBtn.addEventListener('click', () => {
+      banner.style.display = 'none';
+      localStorage.setItem('pwa-dismissed', Date.now().toString());
+    });
   </script>
 </body>
 </html>
