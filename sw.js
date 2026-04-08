@@ -1,12 +1,15 @@
-const CACHE_NAME = 'news-tracker-v1';
+const CACHE_NAME = 'news-tracker-v2';
 
-// Install — cache the main page and assets
+// Install — cache core assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll([
-        '/news-tracker/',
-        '/news-tracker/index.html'
+      // Cache individually so one failure doesn't block everything
+      return Promise.allSettled([
+        cache.add('/news-tracker/'),
+        cache.add('/news-tracker/index.html'),
+        cache.add('/news-tracker/manifest.json'),
+        cache.add('/news-tracker/images/favicon-192.png')
       ]);
     })
   );
@@ -28,8 +31,11 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        // Only cache successful same-origin responses
+        if (response.ok && event.request.url.startsWith(self.location.origin)) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
         return response;
       })
       .catch(() => caches.match(event.request))

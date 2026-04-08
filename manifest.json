@@ -3,25 +3,23 @@
   "short_name": "AI News",
   "description": "Curated headlines from the world's top sources, updated hourly",
   "start_url": "/news-tracker/",
+  "scope": "/news-tracker/",
   "display": "standalone",
   "background_color": "#0C1B2A",
   "theme_color": "#0C1B2A",
+  "orientation": "any",
   "icons": [
     {
       "src": "images/favicon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "images/favicon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "images/favicon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ]
 }
