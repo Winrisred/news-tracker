@@ -1401,30 +1401,36 @@
         const ua = navigator.userAgent;
         const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         const isAndroid = /Android/i.test(ua);
+        const isFirefox = /FxiOS/i.test(ua);
+        const isChromeIOS = /CriOS/i.test(ua);
 
-        if (isIOS) {
-          // iOS: all browsers — use Share → Add to Home Screen
-          instructions.innerHTML = 'Tap the <strong>Share</strong> button (square with arrow) then <strong>"Add to Home Screen"</strong>';
+        function dismissOnClick() {
           installBtn.textContent = 'Got it';
           installBtn.onclick = () => {
             banner.style.display = 'none';
             localStorage.setItem('pwa-dismissed', Date.now().toString());
           };
+        }
+
+        if (isIOS && isFirefox) {
+          // Firefox on iOS
+          instructions.innerHTML = 'Tap <strong>Share</strong> \u2b06 (top left) \u2192 <strong>"Add to Home Screen"</strong>';
+          dismissOnClick();
+        } else if (isIOS && isChromeIOS) {
+          // Chrome on iOS
+          instructions.innerHTML = 'Tap <strong>Share</strong> \u2b06 (top right) \u2192 <strong>"Add to Home Screen"</strong>';
+          dismissOnClick();
+        } else if (isIOS) {
+          // Safari on iOS
+          instructions.innerHTML = 'Tap <strong>Share</strong> \u2b06 (bottom bar) \u2192 <strong>"Add to Home Screen"</strong>';
+          dismissOnClick();
         } else if (isAndroid) {
-          instructions.innerHTML = 'Tap <strong>Menu \u22ee</strong> then <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>';
-          installBtn.textContent = 'Got it';
-          installBtn.onclick = () => {
-            banner.style.display = 'none';
-            localStorage.setItem('pwa-dismissed', Date.now().toString());
-          };
+          instructions.innerHTML = 'Tap <strong>Menu \u22ee</strong> \u2192 <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>';
+          dismissOnClick();
         } else {
           // Desktop
           instructions.innerHTML = 'Click the <strong>install icon</strong> in the address bar, or <strong>Menu \u22ee \u2192 Install app</strong>';
-          installBtn.textContent = 'Got it';
-          installBtn.onclick = () => {
-            banner.style.display = 'none';
-            localStorage.setItem('pwa-dismissed', Date.now().toString());
-          };
+          dismissOnClick();
         }
 
         showBanner();
