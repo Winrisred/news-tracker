@@ -1277,10 +1277,24 @@
           .then(r => r.json())
           .then(data => {
             if (data && typeof data === 'object') {
-              // Merge: cloud takes priority
-              userTags = Object.assign({}, userTags, data);
-              localStorage.setItem('news-tracker-user-tags', JSON.stringify(userTags));
-              rerenderTagBtns();
+              const synced = localStorage.getItem('news-tracker-synced') === '1';
+              const localHasData = Object.keys(userTags).length > 0;
+              const cloudEmpty = Object.keys(data).length === 0;
+
+              if (!synced && localHasData && cloudEmpty) {
+                // First-time seed: push local tags up so they aren't lost
+                fetch(syncUrl, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  body: JSON.stringify(userTags)
+                }).catch(() => {});
+              } else {
+                // Cloud is source of truth — ensures deletions/untagging propagate
+                userTags = data;
+                localStorage.setItem('news-tracker-user-tags', JSON.stringify(userTags));
+                rerenderTagBtns();
+              }
+              localStorage.setItem('news-tracker-synced', '1');
             }
           })
           .catch(() => {});
