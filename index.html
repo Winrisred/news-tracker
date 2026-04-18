@@ -602,27 +602,25 @@
     }
 
     /* ── User Tag Buttons on Cards ───────────────── */
-    .user-tags-row {
+    .card-meta-tags {
       display: flex;
-      gap: 0.4rem;
-      padding-top: 0.5rem;
-      margin-top: 0.5rem;
-      border-top: 1px solid var(--cream-dark);
+      gap: 0.3rem;
+      margin-left: 0.5rem;
     }
 
     .user-tag-btn {
       background: none;
       border: 1px solid var(--border-light);
       color: var(--text-muted);
-      padding: 0.2rem 0.6rem;
-      border-radius: 20px;
-      font-size: 0.68rem;
+      padding: 0.08rem 0.4rem;
+      border-radius: 12px;
+      font-size: 0.62rem;
       font-weight: 600;
       cursor: pointer;
       font-family: inherit;
       transition: all 0.15s;
       letter-spacing: 0.02em;
-      line-height: 1.5;
+      line-height: 1.4;
     }
 
     .user-tag-btn.t-key { border-color: #1A3352; color: #1A3352; }
@@ -1380,11 +1378,11 @@
             <h2 class="card-headline">${article.headline}</h2>
             <div class="card-meta">
               <span class="card-meta-source">${article.source}</span>
-              <span>${timeAgo(article.date)}</span>
-            </div>
-            <div class="user-tags-row">
-              <button class="user-tag-btn t-key${uTags.key ? ' active' : ''}" data-idx="${renderIdx}" data-tag="key" onclick="handleTagClick(event, ${renderIdx}, 'key')">🔑 Key</button>
-              <button class="user-tag-btn t-research${uTags.research ? ' active' : ''}" data-idx="${renderIdx}" data-tag="research" onclick="handleTagClick(event, ${renderIdx}, 'research')">🔬 Research</button>
+              <div class="card-meta-tags">
+                <button class="user-tag-btn t-key${uTags.key ? ' active' : ''}" data-idx="${renderIdx}" data-tag="key" onclick="handleTagClick(event, ${renderIdx}, 'key')">🔑 Key</button>
+                <button class="user-tag-btn t-research${uTags.research ? ' active' : ''}" data-idx="${renderIdx}" data-tag="research" onclick="handleTagClick(event, ${renderIdx}, 'research')">🔬 Res</button>
+              </div>
+              <span style="margin-left:auto;">${timeAgo(article.date)}</span>
             </div>
           </div>
         </a>`;
