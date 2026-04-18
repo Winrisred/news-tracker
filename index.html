@@ -1273,28 +1273,14 @@
       syncUrl = localStorage.getItem('news-tracker-sync-url') || '';
 
       if (syncUrl) {
-        fetch(syncUrl)
+        fetch(syncUrl + '?_=' + Date.now()) // cache-bust
           .then(r => r.json())
           .then(data => {
             if (data && typeof data === 'object') {
-              const synced = localStorage.getItem('news-tracker-synced') === '1';
-              const localHasData = Object.keys(userTags).length > 0;
-              const cloudEmpty = Object.keys(data).length === 0;
-
-              if (!synced && localHasData && cloudEmpty) {
-                // First-time seed: push local tags up so they aren't lost
-                fetch(syncUrl, {
-                  method: 'POST',
-                  mode: 'no-cors',
-                  body: JSON.stringify(userTags)
-                }).catch(() => {});
-              } else {
-                // Cloud is source of truth — ensures deletions/untagging propagate
-                userTags = data;
-                localStorage.setItem('news-tracker-user-tags', JSON.stringify(userTags));
-                rerenderTagBtns();
-              }
-              localStorage.setItem('news-tracker-synced', '1');
+              // Cloud is always the source of truth — ensures deletions/untagging propagate
+              userTags = data;
+              localStorage.setItem('news-tracker-user-tags', JSON.stringify(userTags));
+              rerenderTagBtns();
             }
           })
           .catch(() => {});
@@ -1354,7 +1340,20 @@
       syncUrl = document.getElementById('sync-url-input').value.trim();
       localStorage.setItem('news-tracker-sync-url', syncUrl);
       document.getElementById('settings-panel').style.display = 'none';
-      if (syncUrl) loadUserTags();
+      if (syncUrl) {
+        // If we have local tags, push them to cloud first so they aren't lost
+        if (Object.keys(userTags).length > 0) {
+          fetch(syncUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(userTags)
+          }).catch(() => {});
+          // Wait a moment for the POST to arrive, then load
+          setTimeout(loadUserTags, 1500);
+        } else {
+          loadUserTags();
+        }
+      }
     }
 
     // ── Card Rendering ─────────────────────────────
