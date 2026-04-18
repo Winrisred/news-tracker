@@ -600,6 +600,154 @@
         font-size: 0.78rem;
       }
     }
+
+    /* ── User Tag Buttons on Cards ───────────────── */
+    .user-tags-row {
+      display: flex;
+      gap: 0.4rem;
+      padding-top: 0.5rem;
+      margin-top: 0.5rem;
+      border-top: 1px solid var(--cream-dark);
+    }
+
+    .user-tag-btn {
+      background: none;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+    }
+
+    .user-tag-btn.t-key { border-color: #1A3352; color: #1A3352; }
+    .user-tag-btn.t-key.active { background: #1A3352; color: white; }
+    .user-tag-btn.t-key:hover:not(.active) { background: rgba(26,51,82,0.08); }
+    .user-tag-btn.t-research { border-color: #2C68C9; color: #2C68C9; }
+    .user-tag-btn.t-research.active { background: #2C68C9; color: white; }
+    .user-tag-btn.t-research:hover:not(.active) { background: rgba(44,104,201,0.08); }
+
+    /* ── Tag Filter Bar ──────────────────────────── */
+    .tag-filter-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: nowrap;
+    }
+
+    .tag-filter-btn {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      padding: 0.35rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .tag-filter-btn:hover { border-color: var(--navy-mid); color: var(--navy); }
+    .tag-filter-btn.active { background: var(--navy); border-color: var(--navy); color: white; }
+    .tag-filter-btn.t-key.active { background: #1A3352; border-color: #1A3352; }
+    .tag-filter-btn.t-research.active { background: #2C68C9; border-color: #2C68C9; }
+
+    /* ── Settings Panel ──────────────────────────── */
+    #settings-panel {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow-lg);
+      z-index: 500;
+      width: 310px;
+      max-width: calc(100vw - 48px);
+    }
+
+    #settings-panel h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.75rem;
+    }
+
+    .settings-field { margin-bottom: 0.75rem; }
+
+    .settings-field label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .settings-field input {
+      width: 100%;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 0.45rem 0.7rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      color: var(--text-body);
+    }
+
+    .settings-field input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
+    }
+
+    .settings-note {
+      font-size: 0.67rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+      line-height: 1.45;
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 1rem;
+    }
+
+    .settings-save {
+      background: var(--navy);
+      color: white;
+      border: none;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .settings-save:hover { background: var(--navy-mid); }
+
+    .settings-cancel {
+      background: none;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      padding: 0.45rem 0.75rem;
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
   </style>
 </head>
 <body>
@@ -632,6 +780,12 @@
         <span class="filter-label">Last</span>
         <input type="text" class="days-input" id="daysInput" value="7" placeholder="all">
         <span class="days-suffix">days</span>
+      </div>
+      <div class="tag-filter-wrap">
+        <span class="filter-label">Saved</span>
+        <button class="tag-filter-btn active" id="tfAll" onclick="setTagFilter(null)">All</button>
+        <button class="tag-filter-btn t-key" id="tfKey" onclick="setTagFilter('key')">🔑 Key</button>
+        <button class="tag-filter-btn t-research" id="tfResearch" onclick="setTagFilter('research')">🔬 Research</button>
       </div>
       <div class="filter-group">
         <span class="filter-label">Filter</span>
@@ -750,7 +904,22 @@
 
   <footer>
     <strong>AI & BigTech News Tracker</strong> — Data from RSS feeds, updated hourly via Google Sheets
+    <br><button onclick="openSettings()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.72rem;cursor:pointer;margin-top:0.5rem;font-family:inherit;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">⚙️ Tag sync settings</button>
   </footer>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel">
+    <h3>⚙️ Tag Sync</h3>
+    <div class="settings-field">
+      <label>Apps Script URL</label>
+      <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/…/exec" />
+      <p class="settings-note">Paste your Google Apps Script URL to sync tags across all your devices. Leave empty to use local storage only.</p>
+    </div>
+    <div class="settings-actions">
+      <button class="settings-cancel" onclick="document.getElementById('settings-panel').style.display='none'">Cancel</button>
+      <button class="settings-save" onclick="saveSyncUrl()">Save</button>
+    </div>
+  </div>
 
   <script>
     // ── Configuration ──────────────────────────────
@@ -1004,6 +1173,10 @@
     let allArticles = [];
     let currentDays = 7;     // null = all
     let currentFilter = 'all';
+    let currentTagFilter = null; // null = all, 'key', 'research'
+    let userTags = {};       // { [headline]: { key: bool, research: bool } }
+    let syncUrl = '';
+    let renderedArticles = [];
 
     // ── Date Parsing (handles dd/MM/yyyy and other formats) ──
     function parseDate(str) {
@@ -1090,8 +1263,89 @@
       return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
     }
 
+    // ── User Tag System ──────────────────────────
+    function loadUserTags() {
+      try {
+        const stored = localStorage.getItem('news-tracker-user-tags');
+        userTags = stored ? JSON.parse(stored) : {};
+      } catch(e) { userTags = {}; }
+
+      syncUrl = localStorage.getItem('news-tracker-sync-url') || '';
+
+      if (syncUrl) {
+        fetch(syncUrl)
+          .then(r => r.json())
+          .then(data => {
+            if (data && typeof data === 'object') {
+              // Merge: cloud takes priority
+              userTags = Object.assign({}, userTags, data);
+              localStorage.setItem('news-tracker-user-tags', JSON.stringify(userTags));
+              rerenderTagBtns();
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
+    function saveUserTags() {
+      localStorage.setItem('news-tracker-user-tags', JSON.stringify(userTags));
+      if (syncUrl) {
+        // Fire-and-forget POST (no-cors simple request)
+        fetch(syncUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify(userTags)
+        }).catch(() => {});
+      }
+    }
+
+    function handleTagClick(event, renderIdx, tagName) {
+      event.preventDefault();
+      event.stopPropagation();
+      const article = renderedArticles[renderIdx];
+      if (!article) return;
+      const key = article.headline;
+      if (!userTags[key]) userTags[key] = {};
+      userTags[key][tagName] = !userTags[key][tagName];
+      if (!userTags[key].key && !userTags[key].research) delete userTags[key];
+      saveUserTags();
+      const btn = event.currentTarget;
+      btn.classList.toggle('active', !!(userTags[key] && userTags[key][tagName]));
+    }
+
+    function rerenderTagBtns() {
+      renderedArticles.forEach((article, idx) => {
+        const tags = userTags[article.headline] || {};
+        const keyBtn = document.querySelector(`[data-idx="${idx}"][data-tag="key"]`);
+        const resBtn = document.querySelector(`[data-idx="${idx}"][data-tag="research"]`);
+        if (keyBtn) keyBtn.classList.toggle('active', !!tags.key);
+        if (resBtn) resBtn.classList.toggle('active', !!tags.research);
+      });
+    }
+
+    function setTagFilter(tag) {
+      currentTagFilter = tag;
+      document.getElementById('tfAll').classList.toggle('active', tag === null);
+      document.getElementById('tfKey').classList.toggle('active', tag === 'key');
+      document.getElementById('tfResearch').classList.toggle('active', tag === 'research');
+      filterAndRender();
+    }
+
+    function openSettings() {
+      document.getElementById('sync-url-input').value = syncUrl;
+      document.getElementById('settings-panel').style.display = 'block';
+    }
+
+    function saveSyncUrl() {
+      syncUrl = document.getElementById('sync-url-input').value.trim();
+      localStorage.setItem('news-tracker-sync-url', syncUrl);
+      document.getElementById('settings-panel').style.display = 'none';
+      if (syncUrl) loadUserTags();
+    }
+
     // ── Card Rendering ─────────────────────────────
-    function createCard(article) {
+    function createCard(article, renderIdx) {
+      renderedArticles[renderIdx] = article;
       const badge = SOURCE_BADGE[article.source] || { bg: '#333', color: '#fff' };
       const tint = SOURCE_TINTS[article.source] || 'rgba(12, 27, 42, 0.2)';
       const tags = article.tags ? article.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3) : [];
@@ -1115,6 +1369,7 @@
       // Ensure link is valid
       const href = article.link && article.link !== '#' ? article.link : '#';
 
+      const uTags = userTags[article.headline] || {};
       return `
         <a class="card" href="${href}" target="_blank" rel="noopener noreferrer">
           ${imageHtml}
@@ -1124,6 +1379,10 @@
             <div class="card-meta">
               <span class="card-meta-source">${article.source}</span>
               <span>${timeAgo(article.date)}</span>
+            </div>
+            <div class="user-tags-row">
+              <button class="user-tag-btn t-key${uTags.key ? ' active' : ''}" data-idx="${renderIdx}" data-tag="key" onclick="handleTagClick(event, ${renderIdx}, 'key')">🔑 Key</button>
+              <button class="user-tag-btn t-research${uTags.research ? ' active' : ''}" data-idx="${renderIdx}" data-tag="research" onclick="handleTagClick(event, ${renderIdx}, 'research')">🔬 Research</button>
             </div>
           </div>
         </a>`;
@@ -1200,7 +1459,8 @@
 
     // ── Filter & Render ──────────────────────────
     function filterAndRender() {
-      usedImages = {}; // Reset image tracker for fresh render
+      usedImages = {};       // Reset image tracker for fresh render
+      renderedArticles = []; // Reset article index for tag buttons
       // Date filter
       let filtered;
       if (currentDays === null) {
@@ -1217,6 +1477,14 @@
       if (currentFilter !== 'all') {
         const kw = currentFilter.toLowerCase();
         filtered = filtered.filter(a => (a.tags || '').toLowerCase().includes(kw));
+      }
+
+      // Apply user tag filter
+      if (currentTagFilter) {
+        filtered = filtered.filter(a => {
+          const tags = userTags[a.headline] || {};
+          return !!tags[currentTagFilter];
+        });
       }
 
       // Sort newest first
@@ -1239,7 +1507,7 @@
         grid.innerHTML = '<div class="empty">No articles found for this filter combination.</div>';
         return;
       }
-      grid.innerHTML = filtered.map(createCard).join('');
+      grid.innerHTML = filtered.map((a, i) => createCard(a, i)).join('');
 
       // Clear filter button
       const clearBtn = document.getElementById('clearFilter');
@@ -1343,6 +1611,7 @@
     }
 
     // ── Init ─────────────────────────────────────
+    loadUserTags();
     if (SHEET_CSV_URL === 'YOUR_GOOGLE_SHEET_CSV_URL_HERE') {
       loadDemo();
     } else {
