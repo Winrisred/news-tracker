@@ -776,7 +776,7 @@
     <div class="filters-inner">
       <div class="filter-group">
         <span class="filter-label">Last</span>
-        <input type="text" class="days-input" id="daysInput" value="7" placeholder="all">
+        <input type="text" class="days-input" id="daysInput" value="all" placeholder="all">
         <span class="days-suffix">days</span>
       </div>
       <div class="tag-filter-wrap">
@@ -1108,6 +1108,22 @@
       ]},
     ];
 
+    // Source-specific image pools (override keyword rules entirely)
+    const SOURCE_IMAGES = {
+      'AISI': [
+        'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1414609245224-aea2364b9ffe?w=600&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=600&h=400&fit=crop',
+      ],
+    };
+
     // General fallback (no keyword matched at all)
     const GENERAL_IMAGES = [
       'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=600&h=400&fit=crop',
@@ -1123,8 +1139,22 @@
     // Track used images to avoid repeats within same render
     let usedImages = {};
 
-    function pickImageForHeadline(headline) {
+    function pickImageForHeadline(headline, source) {
       const h = hashString(headline);
+      if (source && SOURCE_IMAGES[source]) {
+        const pool = SOURCE_IMAGES[source];
+        const key = 'source:' + source;
+        if (!usedImages[key]) usedImages[key] = new Set();
+        let idx = h % pool.length;
+        let attempts = 0;
+        while (usedImages[key].has(idx) && attempts < pool.length) {
+          idx = (idx + 1) % pool.length;
+          attempts++;
+        }
+        usedImages[key].add(idx);
+        if (usedImages[key].size >= pool.length) usedImages[key] = new Set();
+        return pool[idx];
+      }
       for (const rule of IMAGE_RULES) {
         if (rule.pattern.test(headline)) {
           const key = rule.pattern.source;
@@ -1155,6 +1185,7 @@
       'Reuters':        'rgba(255, 140, 0, 0.2)',
       'MIT Tech Review': 'rgba(50, 80, 140, 0.25)',
       'Bloomberg':       'rgba(0, 0, 0, 0.25)',
+      'AISI':            'rgba(30, 80, 50, 0.25)',
     };
 
     const SOURCE_BADGE = {
@@ -1167,11 +1198,12 @@
       'Reuters':         { bg: '#FF8000', color: '#fff' },
       'MIT Tech Review': { bg: '#011B3C', color: '#fff' },
       'Bloomberg':       { bg: '#000000', color: '#FA7B17' },
+      'AISI':            { bg: '#1D1D44', color: '#fff' },
     };
 
     // ── State ──────────────────────────────────────
     let allArticles = [];
-    let currentDays = 7;     // null = all
+    let currentDays = null;  // null = all
     let currentFilter = 'all';
     let currentTagFilter = null; // null = all, 'key', 'research'
     let userTags = {};       // { [headline]: { key: bool, research: bool } }
@@ -1367,7 +1399,7 @@
 
       let imageHtml;
       if (article.imageUrl) {
-        const fallbackImg = pickImageForHeadline(article.headline);
+        const fallbackImg = pickImageForHeadline(article.headline, article.source);
         imageHtml = `
           <div class="card-image">
             <img src="${article.imageUrl}" alt="" loading="lazy"
@@ -1404,7 +1436,7 @@
     function generateFallbackHtml(headline, source) {
       const badge = SOURCE_BADGE[source] || { bg: '#333', color: '#fff' };
       const tint = SOURCE_TINTS[source] || 'rgba(12, 27, 42, 0.2)';
-      const imgUrl = pickImageForHeadline(headline);
+      const imgUrl = pickImageForHeadline(headline, source);
       return `
         <div class="card-image">
           <img src="${imgUrl}" alt="" loading="lazy">

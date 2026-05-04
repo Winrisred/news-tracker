@@ -19,6 +19,12 @@ const MASTER_SHEET = "All News";
 const SUMMARY_SHEET = "Summary";
 const MAX_ROWS = 10000;
 
+// ── Scraped Sources (no RSS feed available) ────────────────
+
+const SCRAPE_SOURCES = [
+  { url: "https://www.aisi.gov.uk/blog", source: "AISI", baseUrl: "https://www.aisi.gov.uk" },
+];
+
 // ── RSS Feeds ───────────────────────────────────────────────
 
 const RSS_FEEDS = [
@@ -121,6 +127,9 @@ const KEYWORD_MAP = {
   "Perplexity": ["perplexity"],
   "Runway": ["runway ai", "runway ml"],
   "Midjourney": ["midjourney"],
+
+  // Government AI Bodies
+  "AISI": ["aisi", "ai safety institute", "uk ai safety"],
 };
 
 const TOPIC_MAP = {
@@ -167,6 +176,7 @@ const SOURCE_COLORS = {
   "VentureBeat": "#2C68C9",
   "Reuters": "#FF8000",
   "MIT Tech Review": "#011B3C",
+  "AISI": "#1D1D44",
 };
 
 
@@ -206,6 +216,35 @@ function fetchNews() {
     }
   }
 
+  // Scrape non-RSS sources
+  for (var i = 0; i < SCRAPE_SOURCES.length; i++) {
+    var scrapeConfig = SCRAPE_SOURCES[i];
+    try {
+      var articles = scrapeSource_(scrapeConfig);
+      for (var j = 0; j < articles.length; j++) {
+        var article = articles[j];
+        if (!existingUrls[article.link]) {
+          article.companies = matchKeywords_(article, KEYWORD_MAP);
+          article.topics = matchKeywords_(article, TOPIC_MAP);
+          article.tags = article.companies.concat(article.topics).join(", ");
+
+          // AISI posts are always relevant (AI safety by definition)
+          if (article.companies.length > 0 || article.topics.length > 0 || scrapeConfig.source === "AISI") {
+            if (article.tags === "") {
+              article.companies = ["AISI"];
+              article.topics = ["AI Safety"];
+              article.tags = "AISI, AI Safety";
+            }
+            newArticles.push(article);
+            existingUrls[article.link] = true;
+          }
+        }
+      }
+    } catch (e) {
+      Logger.log("Error scraping " + scrapeConfig.source + ": " + e.message);
+    }
+  }
+
   if (newArticles.length === 0) {
     Logger.log("No new articles found.");
     return;
@@ -230,6 +269,169 @@ function fetchNews() {
   autoFormatSheets_(ss);
 
   Logger.log("Added " + newArticles.length + " new articles.");
+}
+
+
+// ============================================================
+// HTML SCRAPING (for sources without RSS)
+// ============================================================
+
+function scrapeSource_(scrapeConfig) {
+  var articles = [];
+  try {
+    var response = UrlFetchApp.fetch(scrapeConfig.url, {
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
+    });
+
+    if (response.getResponseCode() !== 200) {
+      Logger.log(scrapeConfig.source + " returned HTTP " + response.getResponseCode());
+      return articles;
+    }
+
+    var html = response.getContentText();
+
+    if (scrapeConfig.source === "AISI") {
+      articles = scrapeAisiBlog_(html, scrapeConfig);
+    }
+  } catch (e) {
+    Logger.log("Scrape error for " + scrapeConfig.source + ": " + e.message);
+  }
+  return articles;
+}
+
+function scrapeAisiBlog_(html, config) {
+  var articles = [];
+  var baseUrl = config.baseUrl;
+
+  Logger.log("AISI: HTML length = " + html.length);
+
+  // Step 1: collect all unique /blog/slug paths and the position of their first occurrence
+  var slugPattern = /href=["']?(\/blog\/[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])["']?/gi;
+  var slugPositions = {};
+  var m;
+  while ((m = slugPattern.exec(html)) !== null) {
+    var slug = m[1];
+    if (!slugPositions.hasOwnProperty(slug)) {
+      slugPositions[slug] = m.index;
+    }
+  }
+
+  var slugs = Object.keys(slugPositions);
+  Logger.log("AISI: Found " + slugs.length + " unique slugs");
+  if (slugs.length > 0) Logger.log("AISI: First slug = " + slugs[0]);
+
+  // Step 2: for each slug, inspect a window of HTML around it to pull title/date/desc
+  for (var i = 0; i < slugs.length; i++) {
+    var slug = slugs[i];
+    var pos = slugPositions[slug];
+
+    // 500 chars before + 2000 chars after the href to capture surrounding card HTML
+    var windowStart = Math.max(0, pos - 500);
+    var windowEnd   = Math.min(html.length, pos + 2000);
+    var win = html.substring(windowStart, windowEnd);
+
+    // ── Title ──────────────────────────────────────────────────
+    var title = "";
+    var titlePatterns = [
+      /<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/i,
+      /<div[^>]*class="[^"]*(?:title|heading|name)[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<span[^>]*class="[^"]*(?:title|heading)[^"]*"[^>]*>([\s\S]*?)<\/span>/i,
+    ];
+    for (var tp = 0; tp < titlePatterns.length; tp++) {
+      var tm = win.match(titlePatterns[tp]);
+      if (tm) {
+        var candidate = tm[1].replace(/<[^>]+>/g, "").trim();
+        if (candidate.length >= 10 && candidate.toLowerCase().indexOf("read post") < 0) {
+          title = candidate;
+          break;
+        }
+      }
+    }
+    // Last resort: strip all tags from the anchor's inner content
+    if (!title) {
+      var anchorInner = win.match(/href=["']?\/blog\/[^"'\s>]+["']?[^>]*>([\s\S]*?)<\/a>/i);
+      if (anchorInner) {
+        var stripped = anchorInner[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        if (stripped.length >= 10 && stripped.toLowerCase().indexOf("read post") < 0) {
+          title = stripped;
+        }
+      }
+    }
+    if (!title) continue;
+
+    // ── Date ───────────────────────────────────────────────────
+    var dateMatch = win.match(/(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[a-z]*\.?\s+\d{1,2},?\s+\d{4}/i);
+    if (!dateMatch) {
+      dateMatch = win.match(/\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[a-z]*\.?\s+\d{4}/i);
+    }
+    var date = dateMatch ? parseDate_(dateMatch[0]) : new Date();
+
+    // ── Description ────────────────────────────────────────────
+    var desc = "";
+    var descPatterns = [
+      /<div[^>]*class="[^"]*(?:desc|summary|excerpt|body|preview|intro)[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      /<p[^>]*class="[^"]*(?:desc|summary|excerpt|body|preview|intro)[^"]*"[^>]*>([\s\S]*?)<\/p>/i,
+      /<p[^>]*>([\s\S]*?)<\/p>/i,
+    ];
+    for (var dp = 0; dp < descPatterns.length; dp++) {
+      var dm = win.match(descPatterns[dp]);
+      if (dm) {
+        var dcandidate = dm[1].replace(/<[^>]+>/g, "").trim();
+        if (dcandidate.length > 20) { desc = dcandidate; break; }
+      }
+    }
+
+    // ── Category ───────────────────────────────────────────────
+    var catMatch = win.match(/(?:Cyber[^<"]{0,30}|Red Team|Organisation|Analysis|Safety Cases|Control|Engineering|Societal Resilience|Science of Evaluations|Strategic Awareness|Human Influence|Model Transparency)/i);
+    if (catMatch) {
+      var cat = catMatch[0].trim();
+      desc = desc ? "[" + cat + "] " + desc : "[" + cat + "]";
+    }
+
+    articles.push({
+      date: date,
+      headline: cleanText_(title),
+      link: baseUrl + slug,
+      source: config.source,
+      imageUrl: "",
+      description: cleanText_(desc),
+      author: "UK AI Safety Institute"
+    });
+  }
+
+  Logger.log("AISI: Parsed " + articles.length + " articles");
+  return articles;
+}
+
+// Run from the Apps Script menu to debug AISI scraping
+function testAisiScrape() {
+  var config = SCRAPE_SOURCES[0]; // AISI
+  var response = UrlFetchApp.fetch(config.url, {
+    muteHttpExceptions: true,
+    followRedirects: true,
+    headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
+  });
+  var code = response.getResponseCode();
+  var html = response.getContentText();
+  Logger.log("HTTP status: " + code);
+  Logger.log("HTML length: " + html.length);
+  Logger.log("First 1000 chars:\n" + html.substring(0, 1000));
+
+  var articles = scrapeAisiBlog_(html, config);
+  Logger.log("Total articles found: " + articles.length);
+  for (var i = 0; i < Math.min(articles.length, 3); i++) {
+    Logger.log("Article " + (i+1) + ": " + articles[i].headline + " | " + articles[i].date + " | " + articles[i].link);
+  }
+
+  SpreadsheetApp.getUi().alert(
+    "AISI scrape test complete.\n" +
+    "HTTP status: " + code + "\n" +
+    "HTML length: " + html.length + " chars\n" +
+    "Articles found: " + articles.length + "\n\n" +
+    "Check Apps Script logs (View > Logs) for details."
+  );
 }
 
 
@@ -538,7 +740,46 @@ function getOrCreateSheet_(ss, name, headers) {
   return sheet;
 }
 
+function reorderSheets_(ss) {
+  // Order: Summary → All News → monthly tabs (newest first) → anything else (alphabetical)
+  var sheets = ss.getSheets();
+  var monthRegex = /^\d{4}-\d{2}$/;
+
+  var summary = null, master = null;
+  var months = [];
+  var others = [];
+
+  for (var i = 0; i < sheets.length; i++) {
+    var name = sheets[i].getName();
+    if (name === SUMMARY_SHEET) summary = sheets[i];
+    else if (name === MASTER_SHEET) master = sheets[i];
+    else if (monthRegex.test(name)) months.push(sheets[i]);
+    else others.push(sheets[i]);
+  }
+
+  // Newest month first (e.g. 2026-04 before 2026-03)
+  months.sort(function(a, b) {
+    return a.getName() < b.getName() ? 1 : (a.getName() > b.getName() ? -1 : 0);
+  });
+  others.sort(function(a, b) {
+    return a.getName() < b.getName() ? -1 : (a.getName() > b.getName() ? 1 : 0);
+  });
+
+  var ordered = [];
+  if (summary) ordered.push(summary);
+  if (master) ordered.push(master);
+  ordered = ordered.concat(months, others);
+
+  // setActiveSheet + moveActiveSheet uses 1-based positions
+  for (var i = 0; i < ordered.length; i++) {
+    ss.setActiveSheet(ordered[i]);
+    ss.moveActiveSheet(i + 1);
+  }
+}
+
 function autoFormatSheets_(ss) {
+  reorderSheets_(ss);
+
   var sheets = ss.getSheets();
   for (var i = 0; i < sheets.length; i++) {
     var s = sheets[i];
@@ -841,7 +1082,10 @@ function onOpen() {
     .addSeparator()
     .addItem("Update summary", "updateSummaryManual")
     .addItem("Reformat all sheets", "reformatAllSheets")
+    .addItem("Reorder sheet tabs", "reorderSheetsManual")
     .addItem("Backfill authors", "backfillAuthors")
+    .addSeparator()
+    .addItem("Test AISI scrape (debug)", "testAisiScrape")
     .addToUi();
 }
 
@@ -945,11 +1189,20 @@ function reformatAllSheets() {
     }
   }
 
+  // Reorder tabs: Summary → All News → newest month → … → oldest
+  reorderSheets_(ss);
+
   // Also update summary
   var master = ss.getSheetByName(MASTER_SHEET);
   if (master) updateSummary_(ss, master);
 
-  SpreadsheetApp.getUi().alert("All sheets reformatted! Filters enabled — use the dropdown arrows in the header to search/filter by date, company, topic, etc.");
+  SpreadsheetApp.getUi().alert("All sheets reformatted and reordered! Filters enabled — use the dropdown arrows in the header to search/filter by date, company, topic, etc.");
+}
+
+function reorderSheetsManual() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  reorderSheets_(ss);
+  SpreadsheetApp.getUi().alert("Sheets reordered: Summary → All News → newest month first.");
 }
 
 function updateSummaryManual() {
