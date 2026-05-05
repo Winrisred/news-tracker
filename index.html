@@ -6,6 +6,11 @@
   <title>AI & BigTech News Tracker</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0C1B2A">
+  <!-- Content-Security-Policy: defense-in-depth against XSS / external script injection.
+       'unsafe-inline' is needed because the page uses inline <style>, inline scripts,
+       and inline event handlers. The CSP still locks down where external scripts/connects
+       can come from. Removing 'unsafe-inline' would require refactoring those (future work). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://docs.google.com https://script.google.com https://winrisred.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none';">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
@@ -920,6 +925,29 @@
   </div>
 
   <script>
+    // ── Security helpers ───────────────────────────
+    // Escape feed-controlled strings before inserting into innerHTML.
+    // Defends against XSS from compromised RSS sources or scraped HTML.
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    // Reject javascript:/data:/vbscript: URLs in href and src attributes.
+    function isSafeHttpUrl(u) {
+      if (typeof u !== 'string' || !u) return false;
+      try {
+        const parsed = new URL(u, window.location.origin);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+      } catch (_) {
+        return false;
+      }
+    }
+
     // ── Configuration ──────────────────────────────
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSibvunYKMfxW2p-59XUfImaZjlCCdpy-Ubk6XeYgeiBcfp68-p7LLr-ooj-HRaG7AxvdHV-YNP9Zml/pub?gid=1429620755&single=true&output=csv';
 
@@ -1369,7 +1397,14 @@
     }
 
     function saveSyncUrl() {
-      syncUrl = document.getElementById('sync-url-input').value.trim();
+      const raw = document.getElementById('sync-url-input').value.trim();
+      // Restrict sync target to Google Apps Script endpoints only.
+      // Prevents accidentally POSTing tag data to an arbitrary URL.
+      if (raw && !raw.startsWith('https://script.google.com/')) {
+        alert('Sync URL must start with https://script.google.com/');
+        return;
+      }
+      syncUrl = raw;
       localStorage.setItem('news-tracker-sync-url', syncUrl);
       document.getElementById('settings-panel').style.display = 'none';
       if (syncUrl) {
@@ -1394,40 +1429,42 @@
       const badge = SOURCE_BADGE[article.source] || { bg: '#333', color: '#fff' };
       const tint = SOURCE_TINTS[article.source] || 'rgba(12, 27, 42, 0.2)';
       const tags = article.tags ? article.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 3) : [];
-      const tagsHtml = tags.map(t => `<span class="tag">${t}</span>`).join('');
-      const escapedHeadline = article.headline.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      // Escape every tag — they are feed-controlled.
+      const tagsHtml = tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
 
       let imageHtml;
-      if (article.imageUrl) {
-        const fallbackImg = pickImageForHeadline(article.headline, article.source);
+      // Only accept http(s) image URLs — reject javascript:/data:/etc. from feeds.
+      const safeImageUrl = isSafeHttpUrl(article.imageUrl) ? article.imageUrl : null;
+      const fallbackImg = pickImageForHeadline(article.headline, article.source);
+      if (safeImageUrl) {
         imageHtml = `
           <div class="card-image">
-            <img src="${article.imageUrl}" alt="" loading="lazy"
-                 onerror="this.onerror=null;this.src='${fallbackImg}'">
+            <img src="${escapeHtml(safeImageUrl)}" alt="" loading="lazy"
+                 onerror="this.onerror=null;this.src='${escapeHtml(fallbackImg)}'">
             <div class="tint-overlay" style="background: ${tint}"></div>
-            <span class="source-badge" style="background:${badge.bg};color:${badge.color}">${article.source}</span>
+            <span class="source-badge" style="background:${badge.bg};color:${badge.color}">${escapeHtml(article.source)}</span>
           </div>`;
       } else {
         imageHtml = generateFallbackHtml(article.headline, article.source);
       }
 
-      // Ensure link is valid
-      const href = article.link && article.link !== '#' ? article.link : '#';
+      // Validate link: only allow http(s). Reject javascript: and other non-navigable schemes.
+      const href = isSafeHttpUrl(article.link) ? article.link : '#';
 
       const uTags = userTags[article.headline] || {};
       return `
-        <a class="card" href="${href}" target="_blank" rel="noopener noreferrer">
+        <a class="card" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">
           ${imageHtml}
           <div class="card-body">
             <div class="card-tags">${tagsHtml}</div>
-            <h2 class="card-headline">${article.headline}</h2>
+            <h2 class="card-headline">${escapeHtml(article.headline)}</h2>
             <div class="card-meta">
-              <span class="card-meta-source">${article.source}</span>
+              <span class="card-meta-source">${escapeHtml(article.source)}</span>
               <div class="card-meta-tags">
                 <button class="user-tag-btn t-key${uTags.key ? ' active' : ''}" data-idx="${renderIdx}" data-tag="key" onclick="handleTagClick(event, ${renderIdx}, 'key')">🔑 Key</button>
                 <button class="user-tag-btn t-research${uTags.research ? ' active' : ''}" data-idx="${renderIdx}" data-tag="research" onclick="handleTagClick(event, ${renderIdx}, 'research')">🔬 Res</button>
               </div>
-              <span style="margin-left:auto;">${timeAgo(article.date)}</span>
+              <span style="margin-left:auto;">${escapeHtml(timeAgo(article.date))}</span>
             </div>
           </div>
         </a>`;
@@ -1439,9 +1476,9 @@
       const imgUrl = pickImageForHeadline(headline, source);
       return `
         <div class="card-image">
-          <img src="${imgUrl}" alt="" loading="lazy">
+          <img src="${escapeHtml(imgUrl)}" alt="" loading="lazy">
           <div class="tint-overlay" style="background: ${tint}"></div>
-          <span class="source-badge" style="background:${badge.bg};color:${badge.color}">${source}</span>
+          <span class="source-badge" style="background:${badge.bg};color:${badge.color}">${escapeHtml(source)}</span>
         </div>`;
     }
 
