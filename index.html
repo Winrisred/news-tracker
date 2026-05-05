@@ -1177,17 +1177,10 @@
       'AISI': AISI_NATURE_IMAGES,
     };
 
-    // General fallback (no keyword matched at all)
-    const GENERAL_IMAGES = [
-      'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=600&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=600&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1550439062-609e1531270e?w=600&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=600&h=400&fit=crop',
-    ];
+    // General fallback (no keyword matched) — local abstract/texture/sky/rocks/cliffs/river/lake/beach/stars/sunset/universe/wildflowers/field/meadow/countryside/night sky/moon/galaxy images, no IP leak
+    const GENERAL_IMAGES = Array.from({length: 180}, (_, i) =>
+      `images/general/general-${String(i + 1).padStart(3, '0')}.jpg`
+    );
 
     // Track used images to avoid repeats within same render
     let usedImages = {};
