@@ -1168,19 +1168,13 @@
     ];
 
     // Source-specific image pools (override keyword rules entirely)
+    // Local nature/forest/sea/plants/landscape images for AISI (no external CDN, no IP leak)
+    const AISI_NATURE_IMAGES = Array.from({length: 120}, (_, i) =>
+      `images/aisi/aisi-${String(i + 1).padStart(3, '0')}.jpg`
+    );
+
     const SOURCE_IMAGES = {
-      'AISI': [
-        'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1414609245224-aea2364b9ffe?w=600&h=400&fit=crop',
-        'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=600&h=400&fit=crop',
-      ],
+      'AISI': AISI_NATURE_IMAGES,
     };
 
     // General fallback (no keyword matched at all)
