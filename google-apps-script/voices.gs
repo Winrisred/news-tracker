@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v2.6 (2026-08)
+// Version: v2.7 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -27,7 +27,14 @@
 
 // ── Configuration ───────────────────────────────────────────
 
-const SCRIPT_VERSION = "v2.6"; // stamped into every PDF — verifies what's deployed
+const SCRIPT_VERSION = "v2.7"; // stamped into every PDF — verifies what's deployed
+
+// Optional: ID of a Google Doc used as the PDF template. Create a Doc,
+// add page numbers (Insert → Page numbers, e.g. bottom right), copy the
+// ID from its URL (/document/d/<ID>/edit) and paste it here. Every PDF
+// then inherits the numbered footer (and the template's margins).
+// DocumentApp cannot insert page-number fields itself, hence the template.
+const ARXIU_TEMPLATE_ID = "";
 
 const MASTER_SHEET = "All Posts";
 const SUMMARY_SHEET = "Summary";
@@ -775,7 +782,7 @@ function doPost(e) {
       paragraphs = fetchArticleText_(link);
     }
 
-    var doc = DocumentApp.create(pdfName);
+    var doc = createArxiuDoc_(pdfName);
     var body = doc.getBody();
 
     var titleP = body.appendParagraph(title);
@@ -918,12 +925,28 @@ function getOrCreateFolder_(name) {
   return it.hasNext() ? it.next() : DriveApp.createFolder(name);
 }
 
+// New PDF document: a copy of the page-numbered template when one is
+// configured, otherwise a plain document (no page numbers).
+function createArxiuDoc_(name) {
+  if (ARXIU_TEMPLATE_ID) {
+    try {
+      var copy = DriveApp.getFileById(ARXIU_TEMPLATE_ID).makeCopy(name);
+      var doc = DocumentApp.openById(copy.getId());
+      doc.getBody().clear(); // keep footers/headers, drop template content
+      return doc;
+    } catch (e) {
+      Logger.log("Arxiu template copy failed (" + e.message + "); using a plain doc");
+    }
+  }
+  return DocumentApp.create(name);
+}
+
 // Run from the editor or menu: creates a small test PDF in the arxiu
 // folder. Running it also forces the Drive/Docs authorization prompt
 // that the web app needs — if doPost fails silently, run this first.
 function testArxiu() {
   var pdfName = buildPdfName_("Arxiu Test", String(new Date().getFullYear()), "If you can read this, the PDF pipeline works");
-  var doc = DocumentApp.create(pdfName);
+  var doc = createArxiuDoc_(pdfName);
   var body = doc.getBody();
   body.appendParagraph("Arxiu test").setHeading(DocumentApp.ParagraphHeading.HEADING1);
   body.appendParagraph("Created " + new Date());
@@ -933,7 +956,8 @@ function testArxiu() {
   folder.createFile(docFile.getAs("application/pdf").setName(pdfName + ".pdf"));
   docFile.setTrashed(true);
   SpreadsheetApp.getUi().alert(
-    "Test PDF created! (script " + SCRIPT_VERSION + ")\n\n" +
+    "Test PDF created! (script " + SCRIPT_VERSION + ")\n" +
+    "Page numbers: " + (ARXIU_TEMPLATE_ID ? "template active" : "no template set") + "\n\n" +
     "Drive → My Drive → " + ARXIU_FOLDER + "\n" +
     "File: " + pdfName + ".pdf\n\n" +
     "If the web page's saves still don't appear after this works,\n" +

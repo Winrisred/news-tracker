@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v2.6** (2026-08)
+**Current version: v2.7** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -57,7 +57,9 @@ Three ways to archive:
 
 - **Voices page** — "Save to Arxiu" on each essay
 - **News page** — "🗂 PDF" on each card
-- **Bookmarklet** (for paywalled subscriptions — FT, NYT, Economist…): in the voices ⚙️ panel, drag the **→ Arxiu** button to your bookmarks bar. Click it while reading any article and it sends the full text *as your logged-in browser sees it* to the same pipeline. This is the only way to capture subscriber-only text — the server-side fetch is anonymous, so tracker-page saves of hard-paywalled articles contain just the public teaser plus metadata and link. Substack essays and most news articles capture fully either way. If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
+- **Bookmarklet** (for paywalled subscriptions — FT, NYT, Economist…): in the voices ⚙️ panel, drag the **→ Arxiu** button to your bookmarks bar. Click it while reading any article and it sends the full text *as your logged-in browser sees it* to the same pipeline. This is the only way to capture subscriber-only text — the server-side fetch is anonymous, so tracker-page saves of hard-paywalled articles contain just the public teaser plus metadata and link. Substack essays and most news articles capture fully either way.
+
+**Page numbers**: Apps Script can't insert page-number fields, so the script copies a template Doc when `ARXIU_TEMPLATE_ID` is set in voices.gs. Create a Google Doc, **Insert → Page numbers** (e.g. bottom right), copy its ID from the URL (`docs.google.com/document/d/<ID>/edit`), paste it into the constant, save, and redeploy (New version). Every PDF then inherits the numbered footer — and the template's margins/page setup, if you customize them. If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
 
 ## Structure
 
@@ -126,6 +128,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v2.7** (2026-08) — Page numbers in Arxiu PDFs via an optional template Doc (`ARXIU_TEMPLATE_ID` in voices.gs): the script copies a Doc whose footer has page numbers, since Apps Script cannot insert page-number fields directly.
 - **v2.6** (2026-08) — Every PDF's "Archived" line now stamps the script version that produced it (and testArxiu's alert shows it), so a stale web-app deployment is immediately visible.
 - **v2.5** (2026-08) — Arxiu PDF redesign: serif typography, paragraph spacing, hero image (via bookmarklet's og:image), junk-line filtering (photo credits, "read more", media-player fallbacks), drop-cap fix, and a fix for italic styling bleeding into the body. Requires re-pasting voices.gs, a deployment "New version", and re-dragging the bookmarklet.
 - **v2.4** (2026-08) — "Last N days" input selects its value on focus, so typing a number replaces "all" directly (both pages).
