@@ -644,7 +644,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.4</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.5</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1098,9 +1098,10 @@
         "a=(a||prompt('Author for the filename:','')||'Unknown').replace(/^By\\s+/i,'');" +
         "var d=g('meta[property=\"article:published_time\"]');" +
         "var y=(d&&d.slice(0,4))||String(new Date().getFullYear());" +
+        "var im=g('meta[property=\"og:image\"]');" +
         "var art=document.querySelector('article')||document.body;" +
         "var ps=Array.prototype.slice.call(art.querySelectorAll('p,h2,h3,blockquote')).map(function(e){return e.innerText.trim()}).filter(function(x){return x.length>40}).slice(0,400);" +
-        "fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({title:t,person:a,publication:location.hostname.replace(/^www\\./,''),link:location.href,year:y,text:ps})})" +
+        "fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({title:t,person:a,publication:location.hostname.replace(/^www\\./,''),link:location.href,year:y,image:im,text:ps})})" +
         ".then(function(){alert('Saved to Arxiu \\u2713')})" +
         ".catch(function(){alert('This site blocked the request \\u2014 archive it from the tracker page instead.')})" +
         "})();";

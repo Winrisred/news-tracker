@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v2.4** (2026-08)
+**Current version: v2.5** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -126,6 +126,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v2.5** (2026-08) — Arxiu PDF redesign: serif typography, paragraph spacing, hero image (via bookmarklet's og:image), junk-line filtering (photo credits, "read more", media-player fallbacks), drop-cap fix, and a fix for italic styling bleeding into the body. Requires re-pasting voices.gs, a deployment "New version", and re-dragging the bookmarklet.
 - **v2.4** (2026-08) — "Last N days" input selects its value on focus, so typing a number replaces "all" directly (both pages).
 - **v2.3** (2026-08) — `testArxiu()` debug function + menu item: creates a test PDF from the editor, forces the Drive/Docs authorization prompt, and prints redeploy instructions. (Apps Script gotcha: a web app runs the code snapshot from its deployment — after pasting new code, update the deployment via Manage deployments → New version.)
 - **v2.2** (2026-08) — Bookmarklet renamed "🗂 Save to Arxiu" (clearer in the bookmarks bar); tooltips on archive buttons name the Drive folder.

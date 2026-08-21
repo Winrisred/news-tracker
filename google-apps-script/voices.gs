@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v2 (2026-08)
+// Version: v2.5 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -766,7 +766,7 @@ function doPost(e) {
     if (data.text && Object.prototype.toString.call(data.text) === "[object Array]") {
       paragraphs = [];
       for (var t = 0; t < data.text.length && paragraphs.length < ARXIU_MAX_PARAGRAPHS; t++) {
-        var para = cleanText_(String(data.text[t])).substring(0, 5000);
+        var para = cleanParagraph_(String(data.text[t])).substring(0, 5000);
         if (para) paragraphs.push(para);
       }
     } else {
@@ -775,17 +775,52 @@ function doPost(e) {
 
     var doc = DocumentApp.create(pdfName);
     var body = doc.getBody();
-    body.appendParagraph(title).setHeading(DocumentApp.ParagraphHeading.HEADING1);
+
+    var titleP = body.appendParagraph(title);
+    titleP.setHeading(DocumentApp.ParagraphHeading.HEADING1);
+    titleP.editAsText().setFontFamily("Georgia").setFontSize(20).setBold(true).setItalic(false);
+    titleP.setSpacingAfter(6);
+
     var byline = person + (publication ? " — " + publication : "") + " · " + year;
-    body.appendParagraph(byline).setHeading(DocumentApp.ParagraphHeading.SUBTITLE);
-    body.appendParagraph(link).editAsText().setLinkUrl(link);
-    body.appendParagraph("Archived " + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "d MMMM yyyy") + " via AI Voices").editAsText().setItalic(true);
+    var byP = body.appendParagraph(byline);
+    byP.editAsText().setFontFamily("Georgia").setFontSize(11).setBold(false).setItalic(false).setForegroundColor("#666666");
+    byP.setSpacingAfter(2);
+
+    var linkP = body.appendParagraph(link);
+    linkP.editAsText().setLinkUrl(link).setFontFamily("Arial").setFontSize(9).setBold(false).setItalic(false);
+    linkP.setSpacingAfter(0);
+
+    var archP = body.appendParagraph("Archived " + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "d MMMM yyyy") + " via AI Voices");
+    archP.editAsText().setItalic(true).setFontFamily("Arial").setFontSize(9).setForegroundColor("#888888");
+    archP.setSpacingAfter(8);
+
     body.appendHorizontalRule();
-    if (paragraphs.length === 0) {
-      body.appendParagraph("(Article text could not be extracted — possibly paywalled. Use the link above.)").editAsText().setItalic(true);
+
+    // Hero image, when the bookmarklet sends one
+    if (data.image && String(data.image).indexOf("http") === 0) {
+      try {
+        var imgResp = UrlFetchApp.fetch(String(data.image), { muteHttpExceptions: true, followRedirects: true });
+        if (imgResp.getResponseCode() === 200) {
+          var img = body.appendImage(imgResp.getBlob());
+          var w = img.getWidth(), h = img.getHeight();
+          if (w > 440) { img.setWidth(440); img.setHeight(Math.round(h * (440 / w))); }
+        }
+      } catch (imgErr) {}
     }
+
+    if (paragraphs.length === 0) {
+      var noneP = body.appendParagraph("(Article text could not be extracted — possibly paywalled. Use the link above.)");
+      noneP.editAsText().setItalic(true).setFontFamily("Georgia").setFontSize(11);
+    }
+    // Explicit per-paragraph attributes: appended paragraphs otherwise
+    // inherit styling (e.g. the italic of the "Archived" line) from
+    // whatever came before them.
     for (var i = 0; i < paragraphs.length; i++) {
-      body.appendParagraph(paragraphs[i]);
+      var p = body.appendParagraph(paragraphs[i]);
+      p.setLineSpacing(1.35);
+      p.setSpacingAfter(10);
+      p.editAsText().setFontFamily("Georgia").setFontSize(11)
+        .setBold(false).setItalic(false).setForegroundColor("#000000");
     }
     doc.saveAndClose();
 
@@ -801,6 +836,26 @@ function doPost(e) {
   }
   return ContentService.createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Clean one extracted paragraph; returns "" for page furniture that is
+// not article text (media-player fallbacks, photo credits, read-more…)
+function cleanParagraph_(raw) {
+  var t = cleanText_(raw);
+  if (!t) return "";
+
+  // Drop-cap artifact ("L ast month" → "Last month"). "A" and "I" are
+  // real one-letter words, so they are left alone.
+  t = t.replace(/^([B-HJ-Z])\s+(?=[a-z])/, "$1");
+
+  if (/your browser does not support/i.test(t)) return "";
+  if (/view image in fullscreen/i.test(t)) return "";
+  if (/^(advertisement|read more$|related:|sign up |subscribe |share this|listen to this article|explore more on these topics)/i.test(t)) return "";
+  if (/^(first published|last modified) on /i.test(t)) return "";
+  // Photo credits: "… Photograph: Dado Ruvić/Reuters", "…/Getty Images"
+  if (t.length < 400 && /(photograph:|\/getty images|\/reuters|\/afp|\/epa|\/ap\b)/i.test(t)) return "";
+
+  return t;
 }
 
 // "LastName - Year - Title", filesystem-safe
@@ -843,7 +898,7 @@ function fetchArticleText_(url) {
     var pRe = /<(p|blockquote|h2|h3)[^>]*>([\s\S]*?)<\/\1>/gi;
     var m;
     while ((m = pRe.exec(scope)) !== null) {
-      var text = cleanText_(m[2]);
+      var text = cleanParagraph_(m[2]);
       var isHeading = m[1] === "h2" || m[1] === "h3";
       if (text.length >= (isHeading ? 3 : 60)) {
         paragraphs.push(text);
