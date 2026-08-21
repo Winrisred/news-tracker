@@ -40,7 +40,7 @@ Until the CSV URL is set, `voices.html` shows demo content (marked as such).
 
 Tabs are auto-ordered after each fetch, matching the news sheet: **Summary** → **All Posts** → monthly tabs newest-first (e.g. `2026-08`), all sorted newest-on-top and auto-reformatted. The `Voices Tracker` menu also has **Rebuild monthly tabs** (one-time backfill of monthly tabs from existing rows — run it once after upgrading an older sheet) and **Reformat all sheets**.
 
-The roster lives in the `VOICES` array at the top of `voices.gs` — add a voice by adding one line (any RSS/Atom feed works: Substack, Ghost, WordPress, plain blogs). For voices without a feed, use a Google News query URL with `type: "gnews"` (collects press coverage by and about them). If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
+The roster lives in the `VOICES` array at the top of `voices.gs` — add a voice by adding one line (any RSS/Atom feed works: Substack, Ghost, WordPress, plain blogs). For voices without a feed, use a Bing News search RSS URL (`https://www.bing.com/news/search?q=...&format=rss`) with `type: "gnews"` — it collects press coverage by and about them, and the script unwraps Bing's redirect links into direct article URLs. (Google News query URLs also work but their links bounce via a redirect + EU consent wall.) If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
 
 ## Structure
 

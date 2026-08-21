@@ -44,8 +44,12 @@ const DESK_CULTURE  = "Culture & Society";
 // ── The Roster ──────────────────────────────────────────────
 // type: "rss" = the voice's own feed (Substack/Ghost/blog — the
 //               pipeline doesn't care which platform).
-//       "gnews" = Google News query for voices without a feed
+//       "gnews" = news-search query for voices without a feed
 //                 (press coverage: pieces by AND about them).
+//                 Bing News RSS is preferred: its links carry the
+//                 real article URL, which we unwrap at fetch time
+//                 (Google News links bounce via a redirect + EU
+//                 consent wall).
 
 const VOICES = [
   // Researchers & Builders
@@ -75,8 +79,8 @@ const VOICES = [
   { person: "Erik Hoel",              publication: "The Intrinsic Perspective",  desk: DESK_CULTURE, type: "rss", url: "https://www.theintrinsicperspective.com/feed" },
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
   { person: "Tressie McMillan Cottom", publication: "essaying",                  desk: DESK_CULTURE, type: "rss", url: "https://tressie.substack.com/feed" },
-  { person: "Yuval Noah Harari",      publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://news.google.com/rss/search?q=%22Yuval+Noah+Harari%22+AI&hl=en-US&gl=US&ceid=US:en" },
-  { person: "Ted Chiang",             publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://news.google.com/rss/search?q=%22Ted+Chiang%22+AI&hl=en-US&gl=US&ceid=US:en" },
+  { person: "Yuval Noah Harari",      publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Yuval+Noah+Harari%22+AI&format=rss&mkt=en-US" },
+  { person: "Ted Chiang",             publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Ted+Chiang%22+AI&format=rss&mkt=en-US" },
 ];
 
 
@@ -177,10 +181,19 @@ function parseRssItems_(root, voice) {
 
     var publication = voice.publication;
 
-    // Google News items: publication is in <source>, and the title
-    // carries a " - Outlet" suffix — strip it.
+    // News-search items: outlet name is in <source> (Google News) or
+    // <News:Source> (Bing News); Google also suffixes titles with
+    // " - Outlet" — strip it. Redirect links are unwrapped to the
+    // real article URL.
     if (voice.type === "gnews") {
-      var sourceText = cleanText_(getChildText_(item, "source"));
+      var sourceText = "";
+      var kids = item.getChildren();
+      for (var k = 0; k < kids.length; k++) {
+        if (kids[k].getName().toLowerCase() === "source") {
+          sourceText = cleanText_(kids[k].getText());
+          break;
+        }
+      }
       if (sourceText) {
         publication = sourceText;
         var suffix = " - " + sourceText;
@@ -188,6 +201,7 @@ function parseRssItems_(root, voice) {
           title = title.slice(0, -suffix.length).trim();
         }
       }
+      link = unwrapRedirect_(link);
     }
 
     var post = buildPost_(voice, {
@@ -566,6 +580,19 @@ function parseDate_(dateStr) {
   }
 }
 
+// Extract the real article URL from aggregator redirect links
+// (e.g. Bing's apiclick.aspx?...&url=https%3a%2f%2f...).
+function unwrapRedirect_(link) {
+  var m = String(link).match(/[?&]url=([^&]+)/);
+  if (m) {
+    try {
+      var target = decodeURIComponent(m[1]);
+      if (target.indexOf("http") === 0) return target;
+    } catch (e) {}
+  }
+  return link;
+}
+
 
 // ============================================================
 // SETUP & TRIGGERS
@@ -650,6 +677,40 @@ function rebuildMonthlySheets() {
   SpreadsheetApp.getUi().alert("Monthly tabs rebuilt: " + Object.keys(groups).sort().reverse().join(", "));
 }
 
+// One-time: delete stored press rows (old Google News redirect links that
+// bounce via a consent wall) and refetch, so they come back with direct
+// article links from the Bing News feeds.
+function refreshPressLinks() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var monthRegex = /^\d{4}-\d{2}$/;
+  var removed = 0;
+
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var name = sheet.getName();
+    if (name !== MASTER_SHEET && !monthRegex.test(name)) continue;
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) continue;
+
+    var kinds = sheet.getRange(2, 7, lastRow - 1, 1).getValues(); // Column G = Kind
+    for (var i = kinds.length - 1; i >= 0; i--) {
+      if (String(kinds[i][0]).trim() === "press") {
+        sheet.deleteRow(i + 2);
+        removed++;
+      }
+    }
+  }
+
+  fetchVoices();
+
+  SpreadsheetApp.getUi().alert(
+    "Press rows refreshed.\n\n" +
+    "Old rows removed: " + removed + " (incl. monthly-tab copies)\n" +
+    "Refetched with direct article links."
+  );
+}
+
 // Fetch a single voice and log the results — handy for debugging feeds
 function testOneVoice() {
   var voice = VOICES[0];
@@ -681,6 +742,7 @@ function onOpen() {
     .addItem("Update summary", "updateSummaryManual")
     .addItem("Rebuild monthly tabs", "rebuildMonthlySheets")
     .addItem("Reformat all sheets", "reformatAllSheets")
+    .addItem("Refresh press links", "refreshPressLinks")
     .addItem("Test first voice (debug)", "testOneVoice")
     .addToUi();
 }
