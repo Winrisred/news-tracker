@@ -644,7 +644,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.1</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.2</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -707,8 +707,8 @@
     </div>
     <div class="settings-field" id="arxiu-bm-wrap" style="display:none;margin-top:0.9rem;">
       <label>Bookmarklet — full text, your subscriptions</label>
-      <p class="settings-note">For paywalled articles (FT, NYT, Economist…): drag this button to your bookmarks bar, then click it while reading any article. It sends the full text as your logged-in browser sees it to the same PDF pipeline.</p>
-      <p style="margin-top:0.55rem;"><a id="arxiu-bookmarklet" onclick="return false;" title="Drag me to your bookmarks bar" style="display:inline-block;background:var(--navy);color:#fff;padding:0.4rem 0.95rem;border-radius:999px;font-size:0.75rem;font-weight:700;text-decoration:none;cursor:grab;">→ Arxiu</a></p>
+      <p class="settings-note">For paywalled articles (FT, NYT, Economist…): drag this button to your bookmarks bar, then click it while reading any article. It sends the full text as your logged-in browser sees it to the same PDF pipeline and confirms with "Saved to Arxiu ✓". (Browsers give bookmarklets a generic globe icon — the 🗂 in the name is its marker; you can rename it after dragging.)</p>
+      <p style="margin-top:0.55rem;"><a id="arxiu-bookmarklet" onclick="return false;" title="Drag me to your bookmarks bar" style="display:inline-block;background:var(--navy);color:#fff;padding:0.4rem 0.95rem;border-radius:999px;font-size:0.75rem;font-weight:700;text-decoration:none;cursor:grab;">🗂 Save to Arxiu</a></p>
     </div>
     <div class="settings-actions">
       <button class="settings-cancel" onclick="closeArxiuSettings()">Cancel</button>
@@ -988,7 +988,7 @@
         if (p.minutes > 0) metaBits.push(`<span>${p.minutes} min read</span>`);
         if (p.kind === 'press') metaBits.push('<span class="press-label">In the press</span>');
         metaBits.push(`<a class="read-link" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">Read &rarr;</a>`);
-        metaBits.push(`<button class="arxiu-btn" data-idx="${i}" title="Save a PDF to your Drive arxiu">Save to Arxiu</button>`);
+        metaBits.push(`<button class="arxiu-btn" data-idx="${i}" title="Saves a PDF to Drive &rarr; folder &quot;Arxiu — AI Voices&quot;">Save to Arxiu</button>`);
 
         return `
         <article class="entry">
