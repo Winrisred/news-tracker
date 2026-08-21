@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Voices — Essays & Commentary</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0C1B2A">
+  <!-- Content-Security-Policy: same defense-in-depth as index.html -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://gc.zgo.at; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://docs.google.com https://*.googleusercontent.com https://script.google.com https://winrisred.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none';">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="images/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+  <style>
+    /* ── Self-hosted fonts (privacy: no IP leak to Google) ── */
+    @font-face {
+      font-family: 'DM Sans';
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+      src: url('fonts/dm-sans-latin.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Sans';
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+      src: url('fonts/dm-sans-latin-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('fonts/dm-serif-display-latin.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('fonts/dm-serif-display-latin-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+    /* ── Reset & Base ─────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --navy: #0C1B2A;
+      --navy-light: #142840;
+      --navy-mid: #1A3352;
+      --red: #E63946;
+      --red-dark: #C5303C;
+      --cream: #F8F6F2;
+      --cream-dark: #EDE9E3;
+      --white: #FFFFFF;
+      --text-dark: #1A1A2E;
+      --text-body: #3D3D56;
+      --text-muted: #7A7A8E;
+      --border-light: #E2DED8;
+      --radius: 8px;
+      --shadow-sm: 0 1px 3px rgba(12, 27, 42, 0.06);
+      --shadow-md: 0 4px 16px rgba(12, 27, 42, 0.08);
+
+      /* Desk colors */
+      --desk-research: #2C68C9;
+      --desk-industry: #B85C38;
+      --desk-policy: #1D6E5A;
+      --desk-culture: #7A4E92;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--text-body);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────────── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 3rem 2rem 2.5rem;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--red);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 2.6rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--white);
+    }
+
+    .header-subtitle {
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 0.6rem;
+      max-width: 520px;
+    }
+
+    .header-accent {
+      width: 48px;
+      height: 3px;
+      background: var(--red);
+      margin-top: 1.5rem;
+      border-radius: 2px;
+    }
+
+    .site-nav {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1.75rem;
+    }
+
+    .site-tab {
+      padding: 0.42rem 1.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: all 0.15s;
+    }
+
+    .site-tab:hover { border-color: rgba(255, 255, 255, 0.6); color: var(--white); }
+    .site-tab.active { background: var(--red); border-color: var(--red); color: var(--white); }
+
+    /* ── Filters ──────────────────────────────────── */
+    .filters {
+      background: var(--white);
+      border-bottom: 1px solid var(--border-light);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filters-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.85rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .desk-chips {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .desk-chip {
+      border: 1px solid var(--border-light);
+      background: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 0.32rem 0.85rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .desk-chip:hover { border-color: var(--navy-mid); color: var(--navy); }
+    .desk-chip.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
+    .desk-chip.d-research.active { background: var(--desk-research); border-color: var(--desk-research); }
+    .desk-chip.d-industry.active { background: var(--desk-industry); border-color: var(--desk-industry); }
+    .desk-chip.d-policy.active { background: var(--desk-policy); border-color: var(--desk-policy); }
+    .desk-chip.d-culture.active { background: var(--desk-culture); border-color: var(--desk-culture); }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-select {
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--text-body);
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 0.38rem 0.6rem;
+      cursor: pointer;
+      max-width: 230px;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
+    }
+
+    .days-input {
+      width: 52px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 0.38rem 0.5rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      color: var(--text-body);
+      text-align: center;
+    }
+
+    .days-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
+    }
+
+    .days-suffix { font-size: 0.74rem; color: var(--text-muted); }
+
+    /* ── Stats bar ────────────────────────────────── */
+    .stats-bar {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 2rem 0;
+    }
+
+    .stats-count {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .demo-note {
+      display: inline-block;
+      margin-left: 0.75rem;
+      font-size: 0.7rem;
+      color: var(--red-dark);
+      font-weight: 500;
+    }
+
+    /* ── Latest-from-each-voice strip ─────────────── */
+    .latest-section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.25rem 2rem 0;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--navy);
+      margin-bottom: 0.75rem;
+    }
+
+    .latest-strip {
+      display: flex;
+      gap: 0.85rem;
+      overflow-x: auto;
+      padding-bottom: 0.85rem;
+      scrollbar-width: thin;
+    }
+
+    .latest-card {
+      flex: 0 0 235px;
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 0.9rem 1rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      transition: box-shadow 0.15s, transform 0.15s;
+      border-top: 3px solid var(--accent, var(--navy));
+    }
+
+    .latest-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .latest-top {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .latest-who { min-width: 0; }
+
+    .latest-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .latest-pub {
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .latest-title {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      color: var(--navy);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .latest-time {
+      margin-top: auto;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Monograms ────────────────────────────────── */
+    .monogram {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: var(--accent-tint, rgba(12, 27, 42, 0.08));
+      color: var(--accent, var(--navy));
+      border: 1.5px solid var(--accent, var(--navy));
+    }
+
+    .monogram.sm { width: 26px; height: 26px; font-size: 0.6rem; }
+
+    /* ── The River ────────────────────────────────── */
+    .river-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 4rem;
+    }
+
+    .river {
+      max-width: 780px;
+    }
+
+    .entry {
+      padding: 1.75rem 0;
+      border-bottom: 1px solid var(--cream-dark);
+    }
+
+    .entry:first-child { padding-top: 0.75rem; }
+
+    .byline {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.65rem;
+    }
+
+    .byline-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .byline-sep { color: var(--border-light); }
+
+    .byline-pub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .desk-pill {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      background: var(--desk-tint, rgba(12, 27, 42, 0.07));
+      color: var(--desk-color, var(--navy));
+    }
+
+    .byline-time {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .entry-title {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 1.55rem;
+      font-weight: 400;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.5rem;
+    }
+
+    .entry-title a {
+      color: var(--navy);
+      text-decoration: none;
+    }
+
+    .entry-title a:hover {
+      color: var(--red-dark);
+      text-decoration: underline;
+      text-decoration-thickness: 1.5px;
+      text-underline-offset: 4px;
+    }
+
+    .standfirst {
+      font-size: 0.92rem;
+      line-height: 1.65;
+      color: var(--text-body);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 660px;
+    }
+
+    .entry-meta {
+      margin-top: 0.6rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .press-label {
+      color: var(--desk-culture);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.62rem;
+    }
+
+    .read-link {
+      color: var(--red-dark);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .read-link:hover { text-decoration: underline; }
+
+    /* ── Empty state ──────────────────────────────── */
+    .empty {
+      padding: 4rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── Footer ───────────────────────────────────── */
+    footer {
+      background: var(--navy);
+      color: rgba(255, 255, 255, 0.4);
+      text-align: center;
+      padding: 2.5rem 2rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.02em;
+    }
+
+    footer strong {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 640px) {
+      header { padding: 2.25rem 1.25rem 2rem; }
+      h1 { font-size: 2rem; }
+      .filters-inner { padding: 0.75rem 1.25rem; gap: 0.75rem; }
+      .stats-bar, .latest-section { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .river-wrap { padding: 1.25rem 1.25rem 3rem; }
+      .entry-title { font-size: 1.28rem; }
+      .latest-card { flex-basis: 205px; }
+      .byline-time { margin-left: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="header-eyebrow">News Tracker</div>
+      <h1>AI Voices</h1>
+      <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
+      <div class="header-accent"></div>
+      <nav class="site-nav">
+        <a class="site-tab" href="index.html">Headlines</a>
+        <a class="site-tab active" href="voices.html">Voices</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="filters">
+    <div class="filters-inner">
+      <div class="desk-chips">
+        <span class="filter-label">Desk</span>
+        <button class="desk-chip active" data-desk="all">All</button>
+        <button class="desk-chip d-research" data-desk="Researchers &amp; Builders">Researchers &amp; Builders</button>
+        <button class="desk-chip d-industry" data-desk="Industry &amp; Chips">Industry &amp; Chips</button>
+        <button class="desk-chip d-policy" data-desk="Policy &amp; China">Policy &amp; China</button>
+        <button class="desk-chip d-culture" data-desk="Culture &amp; Society">Culture &amp; Society</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Voice</span>
+        <select class="filter-select" id="voiceSelect">
+          <option value="all">All voices</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Last</span>
+        <input type="text" class="days-input" id="daysInput" value="all" placeholder="all">
+        <span class="days-suffix">days</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <span class="stats-count" id="statsCount">Loading...</span><span class="demo-note" id="demoNote" style="display:none;">Demo content — publish the Voices sheet as CSV and set VOICES_CSV_URL to go live</span>
+  </div>
+
+  <div class="latest-section" id="latestSection">
+    <div class="section-label">Latest from each voice</div>
+    <div class="latest-strip" id="latestStrip"></div>
+  </div>
+
+  <div class="river-wrap">
+    <div class="river" id="river"></div>
+  </div>
+
+  <footer>
+    <strong>AI Voices</strong> v2 — Essays &amp; commentary from a curated roster, collected via Google Sheets
+  </footer>
+
+  <script>
+    // ── Configuration ──────────────────────────────
+    // Publish the Voices Google Sheet ("All Posts" tab) as CSV and paste the URL here
+    const VOICES_CSV_URL = 'YOUR_VOICES_SHEET_CSV_URL_HERE';
+
+    // ── Desk styling ───────────────────────────────
+    const DESK_COLORS = {
+      'Researchers & Builders': '#2C68C9',
+      'Industry & Chips':       '#B85C38',
+      'Policy & China':         '#1D6E5A',
+      'Culture & Society':      '#7A4E92',
+    };
+
+    // ── Per-voice accent colors ────────────────────
+    const VOICE_ACCENTS = {
+      'Zvi Mowshowitz':          '#8C6D1F',
+      'Jack Clark':              '#1D6E5A',
+      'Nathan Lambert':          '#2C68C9',
+      'Ethan Mollick':           '#4E7A3B',
+      'Sebastian Raschka':       '#B85C38',
+      'swyx & Alessio':          '#7059B8',
+      'Simon Willison':          '#6B7A1F',
+      'Dwarkesh Patel':          '#C25746',
+      'Gary Marcus':             '#B3446C',
+      'Ben Thompson':            '#4A6785',
+      'Dylan Patel':             '#7A4E92',
+      'Casey Newton':            '#2F8FA3',
+      'Alberto Romero':          '#B07D2B',
+      'Jeffrey Ding':            '#B23A48',
+      'Helen Toner':             '#33707E',
+      'Timothy B. Lee':          '#5B71C9',
+      'L.M. Sacasas':            '#6E5E8C',
+      'Erik Hoel':               '#5E8CA6',
+      'Brian Merchant':          '#A63A2E',
+      'Tressie McMillan Cottom': '#8F2D56',
+      'Yuval Noah Harari':       '#1F5E8C',
+      'Ted Chiang':              '#178A7E',
+    };
+
+    // ── State ──────────────────────────────────────
+    let allPosts = [];
+    let currentDesk = 'all';
+    let currentVoice = 'all';
+    let currentDays = null; // null = all
+    let isDemo = false;
+
+    // ── Utilities ──────────────────────────────────
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function safeLink(url) {
+      const u = String(url || '').trim();
+      return (u.startsWith('https://') || u.startsWith('http://')) ? u : '#';
+    }
+
+    function hashString(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash);
+    }
+
+    function accentFor(person) {
+      return VOICE_ACCENTS[person] || `hsl(${hashString(person) % 360}, 42%, 38%)`;
+    }
+
+    function hexToTint(color, alpha) {
+      // Works for both #rrggbb and hsl() fallback accents
+      if (color.startsWith('#') && color.length === 7) {
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+      return color.replace('hsl(', 'hsla(').replace(')', `, ${alpha})`);
+    }
+
+    function monogramOf(person) {
+      const words = person.split(/\s+/).filter(w => /[a-zA-Z]/.test(w));
+      if (words.length === 0) return '?';
+      const first = words[0].replace(/[^a-zA-Z]/g, '').charAt(0);
+      const last = words.length > 1 ? words[words.length - 1].replace(/[^a-zA-Z]/g, '').charAt(0) : '';
+      return (first + last).toUpperCase();
+    }
+
+    function timeAgo(date) {
+      const diff = Date.now() - date;
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      if (mins < 60) return mins + 'm ago';
+      if (hours < 24) return hours + 'h ago';
+      if (days === 1) return 'Yesterday';
+      if (days < 7) return days + 'd ago';
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: days > 330 ? 'numeric' : undefined });
+    }
+
+    // ── Date Parsing (handles dd/MM/yyyy and other formats) ──
+    function parseDate(str) {
+      if (!str) return new Date(NaN);
+      const parts = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (parts) {
+        return new Date(parseInt(parts[3]), parseInt(parts[2]) - 1, parseInt(parts[1]));
+      }
+      return new Date(str);
+    }
+
+    // ── CSV Parsing ────────────────────────────────
+    function parseCSV(text) {
+      const lines = text.split('\n');
+      if (lines.length < 2) return [];
+      const posts = [];
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCSVLine(lines[i]);
+        if (row.length < 6) continue;
+        posts.push({
+          date: parseDate(row[0]),
+          title: row[1],
+          link: row[2],
+          person: row[3],
+          publication: row[4] || '',
+          desk: row[5] || '',
+          kind: row[6] || 'essay',
+          standfirst: row[7] || '',
+          minutes: parseInt(row[8], 10) || 0
+        });
+      }
+      return posts.filter(p => p.title && p.person && !isNaN(p.date.getTime()));
+    }
+
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+          else inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    // ── Voice dropdown (built from loaded data) ────
+    function buildVoiceSelect() {
+      const select = document.getElementById('voiceSelect');
+      const byDesk = {};
+      allPosts.forEach(p => {
+        if (!byDesk[p.desk]) byDesk[p.desk] = new Set();
+        byDesk[p.desk].add(p.person);
+      });
+
+      let html = '<option value="all">All voices</option>';
+      const deskOrder = Object.keys(DESK_COLORS).concat(
+        Object.keys(byDesk).filter(d => !(d in DESK_COLORS))
+      );
+      deskOrder.forEach(desk => {
+        if (!byDesk[desk]) return;
+        html += `<optgroup label="${escapeHtml(desk)}">`;
+        [...byDesk[desk]].sort().forEach(person => {
+          html += `<option value="${escapeHtml(person)}">${escapeHtml(person)}</option>`;
+        });
+        html += '</optgroup>';
+      });
+      select.innerHTML = html;
+      select.value = currentVoice;
+      if (select.value !== currentVoice) { currentVoice = 'all'; select.value = 'all'; }
+    }
+
+    // ── Rendering ──────────────────────────────────
+    function monogramHtml(person, small) {
+      const accent = accentFor(person);
+      return `<span class="monogram${small ? ' sm' : ''}" style="--accent:${accent};--accent-tint:${hexToTint(accent, 0.12)};">${escapeHtml(monogramOf(person))}</span>`;
+    }
+
+    function renderLatestStrip(posts) {
+      const section = document.getElementById('latestSection');
+      const strip = document.getElementById('latestStrip');
+
+      // One card per voice — its most recent post — hidden when a single voice is selected
+      if (currentVoice !== 'all') { section.style.display = 'none'; return; }
+
+      const latest = new Map();
+      posts.forEach(p => {
+        const existing = latest.get(p.person);
+        if (!existing || p.date > existing.date) latest.set(p.person, p);
+      });
+
+      const cards = [...latest.values()].sort((a, b) => b.date - a.date);
+      if (cards.length < 2) { section.style.display = 'none'; return; }
+      section.style.display = '';
+
+      strip.innerHTML = cards.map(p => {
+        const accent = accentFor(p.person);
+        return `
+        <a class="latest-card" style="--accent:${accent};--accent-tint:${hexToTint(accent, 0.12)};" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">
+          <div class="latest-top">
+            ${monogramHtml(p.person, true)}
+            <div class="latest-who">
+              <div class="latest-name">${escapeHtml(p.person)}</div>
+              <div class="latest-pub">${escapeHtml(p.publication)}</div>
+            </div>
+          </div>
+          <div class="latest-title">${escapeHtml(p.title)}</div>
+          <div class="latest-time">${timeAgo(p.date)}</div>
+        </a>`;
+      }).join('');
+    }
+
+    function renderRiver(posts) {
+      const river = document.getElementById('river');
+      if (posts.length === 0) {
+        river.innerHTML = '<div class="empty">No essays match these filters.</div>';
+        return;
+      }
+
+      river.innerHTML = posts.map(p => {
+        const deskColor = DESK_COLORS[p.desk] || '#0C1B2A';
+        const metaBits = [];
+        if (p.minutes > 0) metaBits.push(`<span>${p.minutes} min read</span>`);
+        if (p.kind === 'press') metaBits.push('<span class="press-label">In the press</span>');
+        metaBits.push(`<a class="read-link" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">Read &rarr;</a>`);
+
+        return `
+        <article class="entry">
+          <div class="byline">
+            ${monogramHtml(p.person, false)}
+            <span class="byline-name">${escapeHtml(p.person)}</span>
+            <span class="byline-sep">&middot;</span>
+            <span class="byline-pub">${escapeHtml(p.publication)}</span>
+            <span class="desk-pill" style="--desk-color:${deskColor};--desk-tint:${hexToTint(deskColor, 0.1)};">${escapeHtml(p.desk)}</span>
+            <span class="byline-time">${timeAgo(p.date)}</span>
+          </div>
+          <h2 class="entry-title"><a href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">${escapeHtml(p.title)}</a></h2>
+          ${p.standfirst ? `<p class="standfirst">${escapeHtml(p.standfirst)}</p>` : ''}
+          <div class="entry-meta">${metaBits.join('')}</div>
+        </article>`;
+      }).join('');
+    }
+
+    function filterAndRender() {
+      let filtered = allPosts.slice();
+
+      if (currentDays !== null) {
+        const cutoff = new Date(Date.now() - currentDays * 86400000);
+        filtered = filtered.filter(p => p.date >= cutoff);
+      }
+      if (currentDesk !== 'all') {
+        filtered = filtered.filter(p => p.desk === currentDesk);
+      }
+
+      // The strip reflects desk+date filters but not the voice filter
+      renderLatestStrip(filtered);
+
+      if (currentVoice !== 'all') {
+        filtered = filtered.filter(p => p.person === currentVoice);
+      }
+
+      filtered.sort((a, b) => b.date - a.date);
+      renderRiver(filtered);
+
+      const voiceCount = new Set(filtered.map(p => p.person)).size;
+      document.getElementById('statsCount').textContent =
+        filtered.length + (filtered.length === 1 ? ' post' : ' posts') + ' · ' +
+        voiceCount + (voiceCount === 1 ? ' voice' : ' voices');
+    }
+
+    // ── Filter events ──────────────────────────────
+    document.querySelectorAll('.desk-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.desk-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentDesk = chip.dataset.desk;
+        filterAndRender();
+      });
+    });
+
+    document.getElementById('voiceSelect').addEventListener('change', e => {
+      currentVoice = e.target.value;
+      filterAndRender();
+    });
+
+    const daysInput = document.getElementById('daysInput');
+    function applyDays() {
+      const v = daysInput.value.trim().toLowerCase();
+      const n = parseInt(v, 10);
+      if (v === '' || v === 'all' || isNaN(n) || n <= 0) {
+        currentDays = null;
+        daysInput.value = 'all';
+      } else {
+        currentDays = n;
+      }
+      filterAndRender();
+    }
+    daysInput.addEventListener('change', applyDays);
+    daysInput.addEventListener('keydown', e => { if (e.key === 'Enter') { applyDays(); daysInput.blur(); } });
+
+    // ── Load Data ──────────────────────────────────
+    async function loadData() {
+      try {
+        const response = await fetch(VOICES_CSV_URL);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        allPosts = parseCSV(await response.text());
+        buildVoiceSelect();
+        filterAndRender();
+      } catch (e) {
+        document.getElementById('river').innerHTML = `
+          <div class="empty">
+            <p>Could not load the voices data.</p>
+            <p style="margin-top:0.5rem;font-size:0.8rem;color:#7A7A8E;">
+              Make sure the Voices Google Sheet is published to the web.<br>
+              Error: ${escapeHtml(e.message)}
+            </p>
+          </div>`;
+        document.getElementById('statsCount').textContent = '';
+        document.getElementById('latestSection').style.display = 'none';
+      }
+    }
+
+    // ── Demo Mode ──────────────────────────────────
+    function loadDemo() {
+      isDemo = true;
+      const d = n => new Date(Date.now() - n * 86400000);
+      allPosts = [
+        { date: d(0),  title: 'AI #78: The Week Everything Shipped At Once', link: 'https://thezvi.substack.com', person: 'Zvi Mowshowitz', publication: "Don't Worry About the Vase", desk: 'Researchers & Builders', kind: 'essay', standfirst: 'The weekly roundup: new frontier models, a safety framework update, three lawsuits, and what the labs are not telling you about agents.', minutes: 54 },
+        { date: d(1),  title: 'Import AI: Measuring What Matters in Frontier Models', link: 'https://importai.substack.com', person: 'Jack Clark', publication: 'Import AI', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'On the widening gap between what benchmarks measure and what deployment reveals, plus notes on compute governance.', minutes: 12 },
+        { date: d(1),  title: 'The State of Open Models, Mid-2026', link: 'https://www.interconnects.ai', person: 'Nathan Lambert', publication: 'Interconnects', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'Open weights keep closing the gap. A tour of the ecosystem: who is releasing, who is retreating, and why the economics finally make sense.', minutes: 15 },
+        { date: d(2),  title: 'Working With Wizards', link: 'https://www.oneusefulthing.org', person: 'Ethan Mollick', publication: 'One Useful Thing', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'What it means to manage a colleague that is better than you at half your job — and how organizations keep getting this wrong.', minutes: 9 },
+        { date: d(3),  title: 'Aggregation Theory Meets the Agent Economy', link: 'https://stratechery.com', person: 'Ben Thompson', publication: 'Stratechery', desk: 'Industry & Chips', kind: 'essay', standfirst: 'If agents do the browsing, who owns demand? The strategic implications for Google, Meta, and everyone who sells attention.', minutes: 14 },
+        { date: d(3),  title: 'The Real Cost of a Gigawatt Datacenter', link: 'https://semianalysis.com', person: 'Dylan Patel', publication: 'SemiAnalysis', desk: 'Industry & Chips', kind: 'essay', standfirst: 'Breaking down the capex stack: chips, power, cooling, and the supply chains nobody models correctly.', minutes: 22 },
+        { date: d(4),  title: 'Platformer: Inside the AI Companion Reckoning', link: 'https://www.platformer.news', person: 'Casey Newton', publication: 'Platformer', desk: 'Industry & Chips', kind: 'essay', standfirst: 'Regulators are circling the companion apps. What the new state laws actually require, and why the industry saw none of it coming.', minutes: 11 },
+        { date: d(5),  title: 'ChinAI #312: Translating the New Beijing AI Measures', link: 'https://chinai.substack.com', person: 'Jeffrey Ding', publication: 'ChinAI', desk: 'Policy & China', kind: 'essay', standfirst: 'A full translation of the draft measures, and what they signal about how China is really thinking about frontier regulation.', minutes: 13 },
+        { date: d(6),  title: 'What Verification Regimes Can and Cannot Do', link: 'https://helentoner.substack.com', person: 'Helen Toner', publication: 'Rising Tide', desk: 'Policy & China', kind: 'essay', standfirst: 'Compute verification is having a moment in policy circles. A sober look at the technical assumptions underneath the optimism.', minutes: 10 },
+        { date: d(2),  title: 'The Machine in the Garden, Again', link: 'https://theconvivialsociety.substack.com', person: 'L.M. Sacasas', publication: 'The Convivial Society', desk: 'Culture & Society', kind: 'essay', standfirst: 'On the older question hiding inside the AI debate: what is attention for, and who gets to arrange the furniture of our inner lives?', minutes: 16 },
+        { date: d(4),  title: 'Yuval Noah Harari: AI and the Collapse of Shared Reality', link: 'https://www.ft.com', person: 'Yuval Noah Harari', publication: 'Financial Times', desk: 'Culture & Society', kind: 'press', standfirst: 'The historian argues that the deepest risk is not superintelligence but the quiet erosion of the institutions that let strangers trust each other.', minutes: 0 },
+        { date: d(7),  title: 'The Luddites Were Right About This One Thing', link: 'https://www.bloodinthemachine.com', person: 'Brian Merchant', publication: 'Blood in the Machine', desk: 'Culture & Society', kind: 'essay', standfirst: 'Two centuries later, the question is identical: not whether the machines work, but who they work for.', minutes: 12 },
+        { date: d(8),  title: 'Why I Am Still Not Worried About Superintelligence (But Am Worried About You)', link: 'https://garymarcus.substack.com', person: 'Gary Marcus', publication: 'Marcus on AI', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'The gap between demo and deployment remains the story. On reliability, hype cycles, and what the benchmarks still hide.', minutes: 8 },
+        { date: d(9),  title: 'Understanding AI: The Robotaxi Numbers Are Getting Serious', link: 'https://www.understandingai.org', person: 'Timothy B. Lee', publication: 'Understanding AI', desk: 'Policy & China', kind: 'essay', standfirst: 'Fresh disengagement data, three new cities, and what the insurance filings reveal about how safe these systems actually are.', minutes: 11 },
+        { date: d(10), title: 'Ted Chiang on Why AI Cannot Make Art', link: 'https://www.newyorker.com', person: 'Ted Chiang', publication: 'The New Yorker', desk: 'Culture & Society', kind: 'press', standfirst: 'The science-fiction writer on choices, intentions, and why a thousand small decisions are the substance of the thing we call art.', minutes: 0 },
+        { date: d(11), title: 'Tools for Thought, Tools for Slop', link: 'https://simonwillison.net', person: 'Simon Willison', publication: 'simonwillison.net', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'Notes from six months of coding with agents: what stuck, what broke, and the prompting patterns I keep reaching for.', minutes: 7 },
+      ];
+      document.getElementById('demoNote').style.display = '';
+      buildVoiceSelect();
+      filterAndRender();
+    }
+
+    // ── Init ───────────────────────────────────────
+    if (VOICES_CSV_URL === 'YOUR_VOICES_SHEET_CSV_URL_HERE') {
+      loadDemo();
+    } else {
+      loadData();
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
+  <!-- GoatCounter analytics -->
+  <script data-goatcounter="https://winrisred.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

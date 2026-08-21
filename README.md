@@ -1,6 +1,13 @@
 # AI & BigTech News Tracker
 
+**Current version: v2** (2026-08)
+
 Automated news aggregator that collects AI and BigTech headlines from RSS feeds and the AISI blog, stores them in Google Sheets, and displays them on a privacy-friendly web dashboard installable as a PWA.
+
+Two pages, one identity:
+
+- **Headlines** (`index.html`) — the wire desk: hourly headlines from major outlets, filtered by company/topic keywords.
+- **Voices** (`voices.html`) — the reading room: essays & commentary from a curated roster of ~22 AI voices (newsletters, blogs, and press coverage), organized in four desks: Researchers & Builders, Industry & Chips, Policy & China, Culture & Society. No keyword filtering — the roster is curated by author.
 
 ## Setup
 
@@ -21,17 +28,33 @@ Automated news aggregator that collects AI and BigTech headlines from RSS feeds 
 
 Push to a GitHub repo, then **Settings > Pages > Source: main branch**. Live at `https://yourusername.github.io/news-tracker/`.
 
+### 4. Voices page (separate Sheet + script)
+
+1. Create a **second, separate** Google Sheet (keeps essays fully apart from news)
+2. **Extensions > Apps Script**, paste `google-apps-script/voices.gs`, save
+3. Run **setupSheets**, then **fetchVoices** to test — check the "All Posts" sheet
+4. Run **createSixHourTrigger** to automate (essays are weekly-ish; 6 h is plenty)
+5. **File > Share > Publish to web** — sheet: **All Posts**, format: **CSV** — and paste the URL into `VOICES_CSV_URL` in `voices.html`
+
+Until the CSV URL is set, `voices.html` shows demo content (marked as such).
+
+Tabs are auto-ordered after each fetch, matching the news sheet: **Summary** → **All Posts** → monthly tabs newest-first (e.g. `2026-08`), all sorted newest-on-top and auto-reformatted. The `Voices Tracker` menu also has **Rebuild monthly tabs** (one-time backfill of monthly tabs from existing rows — run it once after upgrading an older sheet) and **Reformat all sheets**.
+
+The roster lives in the `VOICES` array at the top of `voices.gs` — add a voice by adding one line (any RSS/Atom feed works: Substack, Ghost, WordPress, plain blogs). For voices without a feed, use a Google News query URL with `type: "gnews"` (collects press coverage by and about them). If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
+
 ## Structure
 
 ```
 news-tracker/
 ├── google-apps-script/
-│   └── ai-bigtech-news.gs    <- Apps Script (paste into Google Sheets)
+│   ├── ai-bigtech-news.gs    <- Headlines Apps Script (paste into Google Sheets)
+│   └── voices.gs             <- Voices Apps Script (paste into a SECOND Sheet)
 ├── images/
 │   ├── aisi/                 <- 120 local nature/forest/sea/plants fallbacks (AISI)
 │   ├── general/              <- 180 local abstract/sky/landscape fallbacks (RSS)
 │   └── favicon-*.png         <- Favicons and PWA icons
-├── index.html                <- Dashboard
+├── index.html                <- Headlines dashboard
+├── voices.html               <- Voices reading room
 ├── manifest.json             <- PWA manifest
 ├── sw.js                     <- Service worker (offline support)
 └── README.md
@@ -45,7 +68,7 @@ Tabs (auto-ordered after each fetch): **Summary** → **All News** → monthly t
 
 ## Sources
 
-- **RSS**: NYT, FT, TechCrunch, The Verge, Ars Technica, VentureBeat, Reuters, MIT Tech Review
+- **RSS**: NYT, FT, TechCrunch, The Verge, Ars Technica, VentureBeat, The Guardian, Wired, MIT Tech Review
 - **HTML scraping**: AISI (UK AI Safety Institute blog — no RSS feed available)
 
 ## Features
@@ -82,4 +105,9 @@ Changes to `google-apps-script/ai-bigtech-news.gs` are **not** deployed via GitH
 
 ## Backup
 
-The `.gs` file in this repo is the local source of truth. If the Google Sheet is deleted, the script disappears with it — restore it from this file.
+The `.gs` files in this repo are the local source of truth. If a Google Sheet is deleted, its script disappears with it — restore it from these files.
+
+## Version history
+
+- **v2** (2026-08) — Keyword overhaul: Meta actually matches now (llama, zuckerberg, facebook…), 18 new companies (DeepSeek, Cursor, CoreWeave, SSI, Thinking Machines…), 4 new topics (AI Agents, AI Coding, AI Copyright, AI Economy), people keywords for the major labs, stale keywords fixed (Gelsinger→Lip-Bu Tan, Wang→Meta), `aisi` false-positive fix, dead Reuters feed replaced with The Guardian + Wired. New **Voices** page (`voices.html` + `voices.gs`): a reading room of ~22 curated AI voices in four desks, with monthly tabs and per-voice summary.
+- **v1** (2025) — Original headlines tracker: RSS + AISI scraping, keyword scoring, Google Sheets pipeline, PWA dashboard with saved-tag sync.

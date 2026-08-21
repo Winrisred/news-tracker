@@ -1,4 +1,4 @@
-const CACHE_NAME = 'news-tracker-v8';
+const CACHE_NAME = 'news-tracker-v9';
 
 // Install — cache core assets
 self.addEventListener('install', event => {
@@ -8,6 +8,7 @@ self.addEventListener('install', event => {
       return Promise.allSettled([
         cache.add('/news-tracker/'),
         cache.add('/news-tracker/index.html'),
+        cache.add('/news-tracker/voices.html'),
         cache.add('/news-tracker/manifest.json'),
         cache.add('/news-tracker/images/favicon-192.png')
       ]);

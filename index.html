@@ -138,6 +138,27 @@
       border-radius: 2px;
     }
 
+    .site-nav {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1.75rem;
+    }
+
+    .site-tab {
+      padding: 0.42rem 1.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: all 0.15s;
+    }
+
+    .site-tab:hover { border-color: rgba(255, 255, 255, 0.6); color: var(--white); }
+    .site-tab.active { background: var(--red); border-color: var(--red); color: var(--white); }
+
     /* ── Filters ──────────────────────────────────── */
     .filters {
       position: sticky;
@@ -806,6 +827,10 @@
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
+      <nav class="site-nav">
+        <a class="site-tab active" href="index.html">Headlines</a>
+        <a class="site-tab" href="voices.html">Voices</a>
+      </nav>
     </div>
   </header>
 
@@ -835,6 +860,8 @@
             <option value="Perplexity">Perplexity</option>
             <option value="Midjourney">Midjourney</option>
             <option value="Stability AI">Stability AI</option>
+            <option value="Safe Superintelligence">Safe Superintelligence</option>
+            <option value="Thinking Machines">Thinking Machines</option>
           </optgroup>
           <optgroup label="Big Tech">
             <option value="Google">Google</option>
@@ -856,12 +883,15 @@
             <option value="Arm">Arm</option>
             <option value="SK Hynix">SK Hynix</option>
             <option value="Micron">Micron</option>
+            <option value="Groq">Groq</option>
+            <option value="Cerebras">Cerebras</option>
           </optgroup>
           <optgroup label="Cloud & Infrastructure">
             <option value="AWS">AWS</option>
             <option value="Azure">Azure</option>
             <option value="Google Cloud">Google Cloud</option>
             <option value="Oracle">Oracle</option>
+            <option value="CoreWeave">CoreWeave</option>
             <option value="Cloudflare">Cloudflare</option>
             <option value="Equinix">Equinix</option>
             <option value="Digital Realty">Digital Realty</option>
@@ -878,12 +908,22 @@
             <option value="Adobe">Adobe</option>
             <option value="ServiceNow">ServiceNow</option>
           </optgroup>
+          <optgroup label="AI Coding">
+            <option value="Cursor">Cursor</option>
+            <option value="Windsurf">Windsurf</option>
+            <option value="Replit">Replit</option>
+            <option value="Lovable">Lovable</option>
+          </optgroup>
           <optgroup label="Chinese Tech">
             <option value="ByteDance">ByteDance</option>
             <option value="Huawei">Huawei</option>
             <option value="Baidu">Baidu</option>
             <option value="Alibaba">Alibaba</option>
             <option value="Tencent">Tencent</option>
+            <option value="DeepSeek">DeepSeek</option>
+            <option value="Moonshot AI">Moonshot AI</option>
+            <option value="Zhipu AI">Zhipu AI</option>
+            <option value="Unitree">Unitree</option>
           </optgroup>
           <optgroup label="Other Companies">
             <option value="Tesla">Tesla</option>
@@ -891,6 +931,11 @@
             <option value="Scale AI">Scale AI</option>
             <option value="Runway">Runway</option>
             <option value="Cohere">Cohere</option>
+            <option value="Hugging Face">Hugging Face</option>
+            <option value="Character.AI">Character.AI</option>
+            <option value="ElevenLabs">ElevenLabs</option>
+            <option value="Suno">Suno</option>
+            <option value="Figure AI">Figure AI</option>
           </optgroup>
           <optgroup label="AI Topics">
             <option value="AI Regulation">AI Regulation</option>
@@ -905,6 +950,10 @@
             <option value="AI Military">AI Military</option>
             <option value="AI Climate">AI Climate</option>
             <option value="AI Education">AI Education</option>
+            <option value="AI Agents">AI Agents</option>
+            <option value="AI Coding">AI Coding</option>
+            <option value="AI Copyright">AI Copyright</option>
+            <option value="AI Economy">AI Economy</option>
           </optgroup>
           <optgroup label="Industry Topics">
             <option value="Semiconductors">Semiconductors</option>
@@ -938,7 +987,7 @@
   </div>
 
   <footer>
-    <strong>AI & BigTech News Tracker</strong> — Data from RSS feeds, updated hourly via Google Sheets
+    <strong>AI & BigTech News Tracker</strong> v2 — Data from RSS feeds, updated hourly via Google Sheets
     <br><button onclick="openSettings()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.72rem;cursor:pointer;margin-top:0.5rem;font-family:inherit;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">⚙️ Tag sync settings</button>
   </footer>
 
@@ -1230,6 +1279,8 @@
       'Ars Technica':   'rgba(255, 120, 0, 0.2)',
       'VentureBeat':    'rgba(44, 104, 201, 0.2)',
       'Reuters':        'rgba(255, 140, 0, 0.2)',
+      'The Guardian':   'rgba(5, 41, 98, 0.3)',
+      'Wired':          'rgba(0, 0, 0, 0.3)',
       'MIT Tech Review': 'rgba(50, 80, 140, 0.25)',
       'Bloomberg':       'rgba(0, 0, 0, 0.25)',
       'AISI':            'rgba(30, 80, 50, 0.25)',
@@ -1243,6 +1294,8 @@
       'Ars Technica':    { bg: '#FF6600', color: '#fff' },
       'VentureBeat':     { bg: '#2C68C9', color: '#fff' },
       'Reuters':         { bg: '#FF8000', color: '#fff' },
+      'The Guardian':    { bg: '#052962', color: '#fff' },
+      'Wired':           { bg: '#000000', color: '#fff' },
       'MIT Tech Review': { bg: '#011B3C', color: '#fff' },
       'Bloomberg':       { bg: '#000000', color: '#FA7B17' },
       'AISI':            { bg: '#1D1D44', color: '#fff' },

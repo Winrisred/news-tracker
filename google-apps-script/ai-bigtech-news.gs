@@ -1,5 +1,6 @@
 // ============================================================
 // AI & BigTech News Tracker — Google Apps Script
+// Version: v2 (2026-08)
 //
 // Sheets:
 //   • "All News"        — every article ever collected
@@ -40,8 +41,9 @@ const RSS_FEEDS = [
   { url: "https://feeds.arstechnica.com/arstechnica/technology-lab", source: "Ars Technica" },
   { url: "https://venturebeat.com/category/ai/feed/", source: "VentureBeat" },
 
-  // Wire services
-  { url: "https://feeds.reuters.com/reuters/technologyNews", source: "Reuters" },
+  // Newspapers & magazines
+  { url: "https://www.theguardian.com/uk/technology/rss", source: "The Guardian" },
+  { url: "https://www.wired.com/feed/tag/ai/latest/rss", source: "Wired" },
 
   // AI specific
   { url: "https://www.technologyreview.com/feed/", source: "MIT Tech Review" },
@@ -51,27 +53,29 @@ const RSS_FEEDS = [
 
 const KEYWORD_MAP = {
   // AI Labs
-  "OpenAI": ["openai", "chatgpt", "gpt-4", "gpt-5", "dall-e", "sora"],
-  "Anthropic": ["anthropic", "claude"],
-  "Google DeepMind": ["deepmind", "gemini ai"],
+  "OpenAI": ["openai", "chatgpt", "gpt-", "dall-e", "sora", "sam altman", "stargate"],
+  "Anthropic": ["anthropic", "claude", "amodei"],
+  "Google DeepMind": ["deepmind", "gemini", "demis hassabis"],
   "Mistral": ["mistral"],
   "xAI": ["xai", "grok"],
   "Cohere": ["cohere"],
   "Stability AI": ["stability ai", "stable diffusion"],
+  "Safe Superintelligence": ["safe superintelligence", "sutskever"],
+  "Thinking Machines": ["thinking machines", "murati"],
 
   // Big Tech
-  "Google": ["google", "alphabet", "waymo", "youtube ai"],
-  "Microsoft": ["microsoft", "copilot", "azure ai", "bing ai"],
-  "Apple": ["apple intelligence", "apple ai", "apple chip"],
-  "Meta": ["meta ai", "llama model", "meta platform"],
-  "Amazon": ["amazon ai", "aws ai", "alexa ai", "amazon web services"],
+  "Google": ["google", "alphabet", "waymo", "youtube ai", "sundar pichai"],
+  "Microsoft": ["microsoft", "copilot", "azure ai", "bing ai", "satya nadella", "mustafa suleyman"],
+  "Apple": ["apple intelligence", "apple ai", "apple chip", "siri", "tim cook"],
+  "Meta": ["meta ai", "meta platform", "llama", "zuckerberg", "facebook", "instagram", "metaverse", "superintelligence lab", "alexandr wang"],
+  "Amazon": ["amazon ai", "aws ai", "alexa ai", "amazon web services", "andy jassy", "trainium"],
   "Samsung": ["samsung ai", "samsung chip"],
   "IBM": ["ibm", "watsonx"],
 
   // Chips & Hardware
   "NVIDIA": ["nvidia", "nvda", "geforce", "cuda", "h100", "b200", "blackwell", "jensen huang"],
-  "AMD": ["amd", "advanced micro devices", "ryzen ai", "instinct"],
-  "Intel": ["intel", "gaudi", "pat gelsinger"],
+  "AMD": ["amd", "advanced micro devices", "ryzen ai", "instinct", "lisa su"],
+  "Intel": ["intel", "gaudi", "lip-bu tan"],
   "TSMC": ["tsmc", "taiwan semiconductor"],
   "ASML": ["asml", "euv lithography"],
   "Qualcomm": ["qualcomm", "snapdragon"],
@@ -79,12 +83,15 @@ const KEYWORD_MAP = {
   "Arm": ["arm holdings", "arm chips", "arm ipo"],
   "SK Hynix": ["sk hynix", "hbm memory"],
   "Micron": ["micron"],
+  "Groq": ["groq"],
+  "Cerebras": ["cerebras"],
 
   // Cloud & Data Centers
   "AWS": ["aws", "amazon web services"],
   "Azure": ["azure", "microsoft cloud"],
   "Google Cloud": ["google cloud", "gcp"],
   "Oracle": ["oracle cloud", "oracle ai"],
+  "CoreWeave": ["coreweave"],
   "Equinix": ["equinix"],
   "Digital Realty": ["digital realty"],
 
@@ -95,7 +102,7 @@ const KEYWORD_MAP = {
   "Zscaler": ["zscaler"],
 
   // EV & Tech
-  "Tesla": ["tesla", "elon musk"],
+  "Tesla": ["tesla"],
   "BYD": ["byd"],
 
   // Defense & Government Tech
@@ -111,25 +118,40 @@ const KEYWORD_MAP = {
   "ServiceNow": ["servicenow"],
   "Adobe": ["adobe ai", "firefly"],
 
+  // AI Coding
+  "Cursor": ["cursor", "anysphere"],
+  "Windsurf": ["windsurf"],
+  "Replit": ["replit"],
+  "Lovable": ["lovable"],
+
   // Chinese Tech
   "ByteDance": ["bytedance", "tiktok"],
   "Huawei": ["huawei"],
   "Baidu": ["baidu", "ernie bot"],
   "Alibaba": ["alibaba", "qwen"],
   "Tencent": ["tencent"],
+  "DeepSeek": ["deepseek"],
+  "Moonshot AI": ["moonshot ai", "kimi"],
+  "Zhipu AI": ["zhipu", "z.ai"],
+  "Unitree": ["unitree"],
 
   // Other
   "SpaceX": ["spacex", "starlink"],
   "Uber": ["uber ai"],
   "Spotify": ["spotify ai"],
   "Netflix": ["netflix ai"],
-  "Scale AI": ["scale ai", "alexandr wang"],
+  "Scale AI": ["scale ai"],
   "Perplexity": ["perplexity"],
   "Runway": ["runway ai", "runway ml"],
   "Midjourney": ["midjourney"],
+  "Hugging Face": ["hugging face"],
+  "Character.AI": ["character.ai", "character ai"],
+  "ElevenLabs": ["elevenlabs", "eleven labs"],
+  "Suno": ["suno"],
+  "Figure AI": ["figure ai", "figure robot"],
 
   // Government AI Bodies
-  "AISI": ["aisi", "ai safety institute", "uk ai safety"],
+  "AISI": ["ai safety institute", "ai security institute", "uk ai safety"],
 };
 
 const TOPIC_MAP = {
@@ -146,6 +168,10 @@ const TOPIC_MAP = {
   "AI Military": ["ai military", "ai defense", "ai weapon", "autonomous weapon", "ai warfare"],
   "AI Climate": ["ai climate", "ai energy", "ai sustainability", "green ai"],
   "AI Education": ["ai education", "ai tutor", "ai learning", "edtech ai"],
+  "AI Agents": ["ai agent", "agentic", "autonomous agent"],
+  "AI Coding": ["vibe coding", "ai coding", "coding assistant", "code assistant", "coding agent"],
+  "AI Copyright": ["copyright", "training data", "fair use"],
+  "AI Economy": ["ai bubble", "ai investment", "ai spending", "capex", "ai valuation"],
 
   // Industry Topics
   "Semiconductors": ["semiconductor", "chip war", "chip shortage", "foundry", "fab", "wafer", "nanometer", "process node"],
@@ -174,7 +200,8 @@ const SOURCE_COLORS = {
   "The Verge": "#E84C3D",
   "Ars Technica": "#FF6600",
   "VentureBeat": "#2C68C9",
-  "Reuters": "#FF8000",
+  "The Guardian": "#052962",
+  "Wired": "#000000",
   "MIT Tech Review": "#011B3C",
   "AISI": "#1D1D44",
 };
