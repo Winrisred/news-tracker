@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v2.5 (2026-08)
+// Version: v2.6 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -26,6 +26,8 @@
 // ============================================================
 
 // ── Configuration ───────────────────────────────────────────
+
+const SCRIPT_VERSION = "v2.6"; // stamped into every PDF — verifies what's deployed
 
 const MASTER_SHEET = "All Posts";
 const SUMMARY_SHEET = "Summary";
@@ -790,7 +792,7 @@ function doPost(e) {
     linkP.editAsText().setLinkUrl(link).setFontFamily("Arial").setFontSize(9).setBold(false).setItalic(false);
     linkP.setSpacingAfter(0);
 
-    var archP = body.appendParagraph("Archived " + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "d MMMM yyyy") + " via AI Voices");
+    var archP = body.appendParagraph("Archived " + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "d MMMM yyyy") + " · AI Voices " + SCRIPT_VERSION);
     archP.editAsText().setItalic(true).setFontFamily("Arial").setFontSize(9).setForegroundColor("#888888");
     archP.setSpacingAfter(8);
 
@@ -931,7 +933,7 @@ function testArxiu() {
   folder.createFile(docFile.getAs("application/pdf").setName(pdfName + ".pdf"));
   docFile.setTrashed(true);
   SpreadsheetApp.getUi().alert(
-    "Test PDF created!\n\n" +
+    "Test PDF created! (script " + SCRIPT_VERSION + ")\n\n" +
     "Drive → My Drive → " + ARXIU_FOLDER + "\n" +
     "File: " + pdfName + ".pdf\n\n" +
     "If the web page's saves still don't appear after this works,\n" +
