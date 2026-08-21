@@ -861,6 +861,30 @@ function getOrCreateFolder_(name) {
   return it.hasNext() ? it.next() : DriveApp.createFolder(name);
 }
 
+// Run from the editor or menu: creates a small test PDF in the arxiu
+// folder. Running it also forces the Drive/Docs authorization prompt
+// that the web app needs — if doPost fails silently, run this first.
+function testArxiu() {
+  var pdfName = buildPdfName_("Arxiu Test", String(new Date().getFullYear()), "If you can read this, the PDF pipeline works");
+  var doc = DocumentApp.create(pdfName);
+  var body = doc.getBody();
+  body.appendParagraph("Arxiu test").setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  body.appendParagraph("Created " + new Date());
+  doc.saveAndClose();
+  var folder = getOrCreateFolder_(ARXIU_FOLDER);
+  var docFile = DriveApp.getFileById(doc.getId());
+  folder.createFile(docFile.getAs("application/pdf").setName(pdfName + ".pdf"));
+  docFile.setTrashed(true);
+  SpreadsheetApp.getUi().alert(
+    "Test PDF created!\n\n" +
+    "Drive → My Drive → " + ARXIU_FOLDER + "\n" +
+    "File: " + pdfName + ".pdf\n\n" +
+    "If the web page's saves still don't appear after this works,\n" +
+    "update the deployment: Deploy → Manage deployments → edit (pencil)\n" +
+    "→ Version: New version → Deploy (the /exec URL stays the same)."
+  );
+}
+
 
 // ============================================================
 // MENU
@@ -878,6 +902,7 @@ function onOpen() {
     .addItem("Rebuild monthly tabs", "rebuildMonthlySheets")
     .addItem("Reformat all sheets", "reformatAllSheets")
     .addItem("Refresh press links", "refreshPressLinks")
+    .addItem("Test Arxiu PDF (debug)", "testArxiu")
     .addItem("Test first voice (debug)", "testOneVoice")
     .addToUi();
 }
