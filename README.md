@@ -1,6 +1,8 @@
 # AI & BigTech News Tracker
 
-**Current version: v2** (2026-08)
+**Current version: v2.1** (2026-08)
+
+Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
 Automated news aggregator that collects AI and BigTech headlines from RSS feeds and the AISI blog, stores them in Google Sheets, and displays them on a privacy-friendly web dashboard installable as a PWA.
 
@@ -124,5 +126,6 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v2.1** (2026-08) — **Arxiu**: save any essay or news article as a PDF (`LastName - Year - Title.pdf`) to Drive, with a bookmarklet capturing full text of subscriber-only articles. Voice marks redesigned: desk colors + per-voice geometric shapes. Desk/voice filters made mutually exclusive. Press coverage switched to Bing News (direct article links). Monthly tabs + auto-formatting for the voices sheet. HTML-entity cleanup across both pages.
 - **v2** (2026-08) — Keyword overhaul: Meta actually matches now (llama, zuckerberg, facebook…), 18 new companies (DeepSeek, Cursor, CoreWeave, SSI, Thinking Machines…), 4 new topics (AI Agents, AI Coding, AI Copyright, AI Economy), people keywords for the major labs, stale keywords fixed (Gelsinger→Lip-Bu Tan, Wang→Meta), `aisi` false-positive fix, dead Reuters feed replaced with The Guardian + Wired. New **Voices** page (`voices.html` + `voices.gs`): a reading room of ~22 curated AI voices in four desks, with monthly tabs and per-voice summary.
 - **v1** (2025) — Original headlines tracker: RSS + AISI scraping, keyword scoring, Google Sheets pipeline, PWA dashboard with saved-tag sync.

@@ -644,7 +644,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.1</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1135,7 +1135,14 @@
       arxiuUrl = raw;
       localStorage.setItem('arxiu-webapp-url', arxiuUrl);
       refreshBookmarkletUi();
-      if (!arxiuUrl) closeArxiuSettings();
+      // Visible confirmation; the panel stays open so the bookmarklet
+      // can be dragged to the bookmarks bar.
+      const btn = document.querySelector('#arxiu-panel .settings-save');
+      btn.textContent = 'Saved ✓';
+      setTimeout(() => {
+        btn.textContent = 'Save';
+        if (!arxiuUrl) closeArxiuSettings();
+      }, 1400);
     }
 
     const daysInput = document.getElementById('daysInput');
