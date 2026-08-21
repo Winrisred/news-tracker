@@ -597,7 +597,7 @@
   <script>
     // ── Configuration ──────────────────────────────
     // Publish the Voices Google Sheet ("All Posts" tab) as CSV and paste the URL here
-    const VOICES_CSV_URL = 'YOUR_VOICES_SHEET_CSV_URL_HERE';
+    const VOICES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTaa-xnSMeJPsYXiO28ZMR3hHag4vgQX2lUVMU3hXRQLKD_UB4Onda3BoVLIYdacEdjtPEI894fKDhf/pub?gid=1252456672&single=true&output=csv';
 
     // ── Desk styling ───────────────────────────────
     const DESK_COLORS = {
@@ -653,6 +653,19 @@
     function safeLink(url) {
       const u = String(url || '').trim();
       return (u.startsWith('https://') || u.startsWith('http://')) ? u : '#';
+    }
+
+    // Decode HTML entities left over in feed text (e.g. &#8217; → ').
+    // Safe: output is plain text and always passes through escapeHtml at render.
+    function decodeEntities(str) {
+      return String(str || '')
+        .replace(/&#(\d+);/g, (m, n) => { try { return String.fromCodePoint(parseInt(n, 10)); } catch (e) { return m; } })
+        .replace(/&#x([0-9a-f]+);/gi, (m, n) => { try { return String.fromCodePoint(parseInt(n, 16)); } catch (e) { return m; } })
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&nbsp;/g, ' ');
     }
 
     function hashString(str) {
@@ -719,13 +732,13 @@
         if (row.length < 6) continue;
         posts.push({
           date: parseDate(row[0]),
-          title: row[1],
+          title: decodeEntities(row[1]),
           link: row[2],
           person: row[3],
           publication: row[4] || '',
           desk: row[5] || '',
           kind: row[6] || 'essay',
-          standfirst: row[7] || '',
+          standfirst: decodeEntities(row[7] || ''),
           minutes: parseInt(row[8], 10) || 0
         });
       }
