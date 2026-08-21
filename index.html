@@ -832,7 +832,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.3</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.4</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -1763,6 +1763,10 @@
         e.target.blur();
         applyDaysInput();
       }
+    });
+    // Select the current value on focus so typing a number replaces "all"
+    document.getElementById('daysInput').addEventListener('focus', function(e) {
+      setTimeout(function() { e.target.select(); }, 0);
     });
 
     // Dropdown filter

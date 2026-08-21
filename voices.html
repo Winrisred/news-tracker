@@ -644,7 +644,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.3</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.4</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1159,6 +1159,8 @@
     }
     daysInput.addEventListener('change', applyDays);
     daysInput.addEventListener('keydown', e => { if (e.key === 'Enter') { applyDays(); daysInput.blur(); } });
+    // Select the current value on focus so typing a number replaces "all"
+    daysInput.addEventListener('focus', () => setTimeout(() => daysInput.select(), 0));
 
     // ── Load Data ──────────────────────────────────
     async function loadData() {
