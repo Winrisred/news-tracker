@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v2.7** (2026-08)
+**Current version: v2.8** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -128,6 +128,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v2.8** (2026-08) — Bookmarklet author detection via JSON-LD structured data (fixes "Unknown" on sites like Yahoo where the byline isn't in meta tags); publication from og:site_name; success alert echoes the captured author/year. Client-side only — re-drag the bookmarklet, no redeploy.
 - **v2.7** (2026-08) — Page numbers in Arxiu PDFs via an optional template Doc (`ARXIU_TEMPLATE_ID` in voices.gs): the script copies a Doc whose footer has page numbers, since Apps Script cannot insert page-number fields directly.
 - **v2.6** (2026-08) — Every PDF's "Archived" line now stamps the script version that produced it (and testArxiu's alert shows it), so a stale web-app deployment is immediately visible.
 - **v2.5** (2026-08) — Arxiu PDF redesign: serif typography, paragraph spacing, hero image (via bookmarklet's og:image), junk-line filtering (photo credits, "read more", media-player fallbacks), drop-cap fix, and a fix for italic styling bleeding into the body. Requires re-pasting voices.gs, a deployment "New version", and re-dragging the bookmarklet.

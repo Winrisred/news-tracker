@@ -644,7 +644,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.7</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.8</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1093,16 +1093,20 @@
     function bookmarkletHref(url) {
       const code = "(function(){var u=" + JSON.stringify(url) + ";" +
         "function g(s){var e=document.querySelector(s);return e&&(e.content||e.textContent)||''}" +
+        // Author from JSON-LD structured data — the most reliable source on news sites
+        "function ld(){try{var s=document.querySelectorAll('script[type=\"application/ld+json\"]');for(var i=0;i<s.length;i++){try{var j=JSON.parse(s[i].textContent);var arr=Array.isArray(j)?j:(j['@graph']||[j]);for(var k=0;k<arr.length;k++){var au=arr[k]&&arr[k].author;if(au){if(Array.isArray(au))au=au[0];var n=(typeof au=='string')?au:(au&&au.name);if(n&&typeof n=='string'&&n.length>1&&n.indexOf('http')!==0)return n}}}catch(e2){}}}catch(e){}return''}" +
+        "function nu(x){return(x&&x.indexOf('http')!==0)?x:''}" +
         "var t=g('meta[property=\"og:title\"]')||document.title;" +
-        "var a=g('meta[name=\"author\"]')||g('meta[property=\"article:author\"]')||g('meta[name=\"byl\"]')||'';" +
+        "var a=ld()||nu(g('meta[name=\"author\"]'))||nu(g('meta[property=\"article:author\"]'))||g('meta[name=\"byl\"]')||'';" +
         "a=(a||prompt('Author for the filename:','')||'Unknown').replace(/^By\\s+/i,'');" +
         "var d=g('meta[property=\"article:published_time\"]');" +
         "var y=(d&&d.slice(0,4))||String(new Date().getFullYear());" +
         "var im=g('meta[property=\"og:image\"]');" +
+        "var pb=g('meta[property=\"og:site_name\"]')||location.hostname.replace(/^www\\./,'');" +
         "var art=document.querySelector('article')||document.body;" +
         "var ps=Array.prototype.slice.call(art.querySelectorAll('p,h2,h3,blockquote')).map(function(e){return e.innerText.trim()}).filter(function(x){return x.length>40}).slice(0,400);" +
-        "fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({title:t,person:a,publication:location.hostname.replace(/^www\\./,''),link:location.href,year:y,image:im,text:ps})})" +
-        ".then(function(){alert('Saved to Arxiu \\u2713')})" +
+        "fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({title:t,person:a,publication:pb,link:location.href,year:y,image:im,text:ps})})" +
+        ".then(function(){alert('Saved to Arxiu \\u2713 ('+a+', '+y+')')})" +
         ".catch(function(){alert('This site blocked the request \\u2014 archive it from the tracker page instead.')})" +
         "})();";
       return 'javascript:' + encodeURIComponent(code);
