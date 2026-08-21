@@ -1027,6 +1027,19 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+    // Decode entities left over in stored feed text (e.g. &#x27; → ').
+    // Display-time only: saved Key/Res tags are keyed by the raw headline,
+    // so the underlying article data must stay untouched.
+    function decodeEntities(s) {
+      return String(s == null ? '' : s)
+        .replace(/&#(\d+);/g, (m, n) => { try { return String.fromCodePoint(parseInt(n, 10)); } catch (e) { return m; } })
+        .replace(/&#x([0-9a-f]+);/gi, (m, n) => { try { return String.fromCodePoint(parseInt(n, 16)); } catch (e) { return m; } })
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&nbsp;/g, ' ');
+    }
     // Reject javascript:/data:/vbscript: URLs in href and src attributes.
     function isSafeHttpUrl(u) {
       if (typeof u !== 'string' || !u) return false;
@@ -1538,7 +1551,7 @@
           ${imageHtml}
           <div class="card-body">
             <div class="card-tags">${tagsHtml}</div>
-            <h2 class="card-headline">${escapeHtml(article.headline)}</h2>
+            <h2 class="card-headline">${escapeHtml(decodeEntities(article.headline))}</h2>
             <div class="card-meta">
               <span class="card-meta-source">${escapeHtml(article.source)}</span>
               <div class="card-meta-tags">

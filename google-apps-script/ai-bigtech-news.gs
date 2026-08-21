@@ -1033,12 +1033,18 @@ function cleanText_(text) {
   if (!text) return "";
   // Remove HTML tags
   text = text.replace(/<[^>]+>/g, "");
-  // Decode HTML entities
+  // Decode numeric entities (e.g. &#x27; / &#8217; → ')
+  text = text.replace(/&#(\d+);/g, function(m, n) {
+    try { return String.fromCharCode(parseInt(n, 10)); } catch (e) { return m; }
+  });
+  text = text.replace(/&#x([0-9a-fA-F]+);/g, function(m, n) {
+    try { return String.fromCharCode(parseInt(n, 16)); } catch (e) { return m; }
+  });
+  // Decode named HTML entities
   text = text.replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ");
   // Trim and collapse whitespace
   return text.replace(/\s+/g, " ").trim();
