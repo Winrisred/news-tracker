@@ -728,6 +728,141 @@ function testOneVoice() {
 
 
 // ============================================================
+// ARXIU — PDF archive web app
+// ============================================================
+// The "Save to Arxiu" button on voices.html POSTs a post's metadata
+// here. We fetch the article, extract its readable text, build a PDF
+// named "LastName - Year - Title.pdf" and file it in a Drive folder.
+//
+// To activate: Deploy → New deployment → Web app →
+//   Execute as: Me · Who has access: Anyone
+// then paste the /exec URL into the Arxiu settings on voices.html.
+//
+// Note: hard-paywalled articles (FT, Economist…) yield only the
+// publicly served teaser; the PDF always includes full metadata + link.
+
+const ARXIU_FOLDER = "Arxiu — AI Voices";
+const ARXIU_MAX_PARAGRAPHS = 300;
+
+function doPost(e) {
+  var result;
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var link = String(data.link || "");
+    if (link.indexOf("https://") !== 0 && link.indexOf("http://") !== 0) {
+      throw new Error("Invalid link");
+    }
+    var person = String(data.person || "Unknown").substring(0, 100);
+    var title = String(data.title || "Untitled").substring(0, 300);
+    var publication = String(data.publication || "").substring(0, 100);
+    var year = String(data.year || new Date().getFullYear()).substring(0, 4);
+
+    var pdfName = buildPdfName_(person, year, title);
+
+    // Text can arrive with the request (the bookmarklet sends the full
+    // article as the logged-in browser sees it — this is how paywalled
+    // subscriptions are captured). Otherwise fetch it ourselves.
+    var paragraphs;
+    if (data.text && Object.prototype.toString.call(data.text) === "[object Array]") {
+      paragraphs = [];
+      for (var t = 0; t < data.text.length && paragraphs.length < ARXIU_MAX_PARAGRAPHS; t++) {
+        var para = cleanText_(String(data.text[t])).substring(0, 5000);
+        if (para) paragraphs.push(para);
+      }
+    } else {
+      paragraphs = fetchArticleText_(link);
+    }
+
+    var doc = DocumentApp.create(pdfName);
+    var body = doc.getBody();
+    body.appendParagraph(title).setHeading(DocumentApp.ParagraphHeading.HEADING1);
+    var byline = person + (publication ? " — " + publication : "") + " · " + year;
+    body.appendParagraph(byline).setHeading(DocumentApp.ParagraphHeading.SUBTITLE);
+    body.appendParagraph(link).editAsText().setLinkUrl(link);
+    body.appendParagraph("Archived " + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "d MMMM yyyy") + " via AI Voices").editAsText().setItalic(true);
+    body.appendHorizontalRule();
+    if (paragraphs.length === 0) {
+      body.appendParagraph("(Article text could not be extracted — possibly paywalled. Use the link above.)").editAsText().setItalic(true);
+    }
+    for (var i = 0; i < paragraphs.length; i++) {
+      body.appendParagraph(paragraphs[i]);
+    }
+    doc.saveAndClose();
+
+    var folder = getOrCreateFolder_(ARXIU_FOLDER);
+    var docFile = DriveApp.getFileById(doc.getId());
+    var pdf = docFile.getAs("application/pdf").setName(pdfName + ".pdf");
+    folder.createFile(pdf);
+    docFile.setTrashed(true); // keep only the PDF
+
+    result = { ok: true, name: pdfName + ".pdf", paragraphs: paragraphs.length };
+  } catch (err) {
+    result = { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// "LastName - Year - Title", filesystem-safe
+function buildPdfName_(person, year, title) {
+  var lastName = person.trim().split(/\s+/).pop().replace(/[^\p{L}\p{N}\-']/gu, "");
+  if (!lastName) lastName = "Unknown";
+  var cleanTitle = title
+    .replace(/[\\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleanTitle.length > 80) {
+    cleanTitle = cleanTitle.substring(0, 80);
+    var lastSpace = cleanTitle.lastIndexOf(" ");
+    if (lastSpace > 40) cleanTitle = cleanTitle.substring(0, lastSpace);
+    cleanTitle += "…";
+  }
+  return lastName + " - " + year + " - " + cleanTitle;
+}
+
+// Readable-text extraction: prefer <article>, drop scripts/styles,
+// keep substantial <p> blocks (skips nav/cookie/footer fragments).
+function fetchArticleText_(url) {
+  var paragraphs = [];
+  try {
+    var response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) NewsTracker/1.0" }
+    });
+    if (response.getResponseCode() !== 200) return paragraphs;
+    var html = response.getContentText();
+
+    var articleMatch = html.match(/<article[\s\S]*?<\/article>/i);
+    var scope = articleMatch ? articleMatch[0] : html;
+    scope = scope
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<(nav|header|footer|aside|form)[\s\S]*?<\/\1>/gi, " ");
+
+    var pRe = /<(p|blockquote|h2|h3)[^>]*>([\s\S]*?)<\/\1>/gi;
+    var m;
+    while ((m = pRe.exec(scope)) !== null) {
+      var text = cleanText_(m[2]);
+      var isHeading = m[1] === "h2" || m[1] === "h3";
+      if (text.length >= (isHeading ? 3 : 60)) {
+        paragraphs.push(text);
+        if (paragraphs.length >= ARXIU_MAX_PARAGRAPHS) break;
+      }
+    }
+  } catch (e) {
+    Logger.log("Arxiu fetch error for " + url + ": " + e.message);
+  }
+  return paragraphs;
+}
+
+function getOrCreateFolder_(name) {
+  var it = DriveApp.getFoldersByName(name);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(name);
+}
+
+
+// ============================================================
 // MENU
 // ============================================================
 

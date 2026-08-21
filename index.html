@@ -997,16 +997,21 @@
 
   <footer>
     <strong>AI & BigTech News Tracker</strong> — Data from RSS feeds, updated hourly via Google Sheets
-    <br><button onclick="openSettings()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.72rem;cursor:pointer;margin-top:0.5rem;font-family:inherit;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">⚙️ Tag sync settings</button>
+    <br><button onclick="openSettings()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.72rem;cursor:pointer;margin-top:0.5rem;font-family:inherit;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">⚙️ Settings</button>
   </footer>
 
   <!-- Settings Panel -->
   <div id="settings-panel">
-    <h3>⚙️ Tag Sync</h3>
+    <h3>⚙️ Settings</h3>
     <div class="settings-field">
-      <label>Apps Script URL</label>
+      <label>Tag sync — Apps Script URL</label>
       <input type="url" id="sync-url-input" placeholder="https://script.google.com/macros/s/…/exec" />
       <p class="settings-note">Paste your Google Apps Script URL to sync tags across all your devices. Leave empty to use local storage only.</p>
+    </div>
+    <div class="settings-field" style="margin-top:0.9rem;">
+      <label>Arxiu — web app URL</label>
+      <input type="url" id="arxiu-url-input" placeholder="https://script.google.com/macros/s/…/exec" />
+      <p class="settings-note">The voices Apps Script deployed as a web app. "🗂 PDF" on a card saves the article as a PDF (<em>LastName - Year - Title</em>) to the Drive folder "Arxiu — AI Voices". Shared with the Voices page.</p>
     </div>
     <div class="settings-actions">
       <button class="settings-cancel" onclick="document.getElementById('settings-panel').style.display='none'">Cancel</button>
@@ -1487,7 +1492,36 @@
 
     function openSettings() {
       document.getElementById('sync-url-input').value = syncUrl;
+      document.getElementById('arxiu-url-input').value = arxiuUrl;
       document.getElementById('settings-panel').style.display = 'block';
+    }
+
+    // ── Arxiu: save an article as PDF to Drive ───
+    // Shares its web app URL with the Voices page (same localStorage key).
+    let arxiuUrl = localStorage.getItem('arxiu-webapp-url') || '';
+
+    function handleArxiuClick(event, renderIdx) {
+      event.preventDefault();
+      event.stopPropagation();
+      const article = renderedArticles[renderIdx];
+      if (!article) return;
+      if (!arxiuUrl) { openSettings(); return; }
+      const btn = event.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      fetch(arxiuUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+          title: decodeEntities(article.headline),
+          person: article.author || article.source,
+          publication: article.source,
+          link: article.link,
+          year: article.date.getFullYear()
+        })
+      })
+        .then(() => { btn.textContent = 'Arxiu ✓'; btn.classList.add('active'); })
+        .catch(() => { btn.textContent = '🗂 Retry'; btn.disabled = false; });
     }
 
     function saveSyncUrl() {
@@ -1498,6 +1532,13 @@
         alert('Sync URL must start with https://script.google.com/');
         return;
       }
+      const rawArxiu = document.getElementById('arxiu-url-input').value.trim();
+      if (rawArxiu && !rawArxiu.startsWith('https://script.google.com/')) {
+        alert('The Arxiu URL must start with https://script.google.com/');
+        return;
+      }
+      arxiuUrl = rawArxiu;
+      localStorage.setItem('arxiu-webapp-url', arxiuUrl);
       syncUrl = raw;
       localStorage.setItem('news-tracker-sync-url', syncUrl);
       document.getElementById('settings-panel').style.display = 'none';
@@ -1557,6 +1598,7 @@
               <div class="card-meta-tags">
                 <button class="user-tag-btn t-key${uTags.key ? ' active' : ''}" data-idx="${renderIdx}" data-tag="key" onclick="handleTagClick(event, ${renderIdx}, 'key')">🔑 Key</button>
                 <button class="user-tag-btn t-research${uTags.research ? ' active' : ''}" data-idx="${renderIdx}" data-tag="research" onclick="handleTagClick(event, ${renderIdx}, 'research')">🔬 Res</button>
+                <button class="user-tag-btn t-arxiu" data-idx="${renderIdx}" onclick="handleArxiuClick(event, ${renderIdx})">🗂 PDF</button>
               </div>
               <span style="margin-left:auto;">${escapeHtml(timeAgo(article.date))}</span>
             </div>

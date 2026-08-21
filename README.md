@@ -40,7 +40,22 @@ Until the CSV URL is set, `voices.html` shows demo content (marked as such).
 
 Tabs are auto-ordered after each fetch, matching the news sheet: **Summary** → **All Posts** → monthly tabs newest-first (e.g. `2026-08`), all sorted newest-on-top and auto-reformatted. The `Voices Tracker` menu also has **Rebuild monthly tabs** (one-time backfill of monthly tabs from existing rows — run it once after upgrading an older sheet) and **Reformat all sheets**.
 
-The roster lives in the `VOICES` array at the top of `voices.gs` — add a voice by adding one line (any RSS/Atom feed works: Substack, Ghost, WordPress, plain blogs). For voices without a feed, use a Bing News search RSS URL (`https://www.bing.com/news/search?q=...&format=rss`) with `type: "gnews"` — it collects press coverage by and about them, and the script unwraps Bing's redirect links into direct article URLs. (Google News query URLs also work but their links bounce via a redirect + EU consent wall.) If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
+The roster lives in the `VOICES` array at the top of `voices.gs` — add a voice by adding one line (any RSS/Atom feed works: Substack, Ghost, WordPress, plain blogs). For voices without a feed, use a Bing News search RSS URL (`https://www.bing.com/news/search?q=...&format=rss`) with `type: "gnews"` — it collects press coverage by and about them, and the script unwraps Bing's redirect links into direct article URLs. (Google News query URLs also work but their links bounce via a redirect + EU consent wall.)
+
+Every voice wears its **desk's color**; within a desk, voices are told apart by a small geometric **mark** (filled/outlined circle, diamond, triangle, square, hexagon) assigned in `VOICE_SHAPES` in `voices.html` — unknown voices get one by hash.
+
+### 5. Arxiu (save articles & essays as PDFs to Drive)
+
+Both pages can archive what you read as PDFs named `LastName - Year - Title.pdf` in the Drive folder **"Arxiu — AI Voices"** — ready to import into a reference archive. Everything runs through the voices Apps Script deployed as a web app:
+
+1. In the voices sheet's Apps Script editor: **Deploy → New deployment → Web app**, Execute as: **Me**, Who has access: **Anyone**, then copy the `/exec` URL
+2. Paste the URL once, on either page (it's shared): voices.html footer → **⚙️ Arxiu settings**, or index.html footer → **⚙️ Settings** → "Arxiu — web app URL"
+
+Three ways to archive:
+
+- **Voices page** — "Save to Arxiu" on each essay
+- **News page** — "🗂 PDF" on each card
+- **Bookmarklet** (for paywalled subscriptions — FT, NYT, Economist…): in the voices ⚙️ panel, drag the **→ Arxiu** button to your bookmarks bar. Click it while reading any article and it sends the full text *as your logged-in browser sees it* to the same pipeline. This is the only way to capture subscriber-only text — the server-side fetch is anonymous, so tracker-page saves of hard-paywalled articles contain just the public teaser plus metadata and link. Substack essays and most news articles capture fully either way. If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
 
 ## Structure
 

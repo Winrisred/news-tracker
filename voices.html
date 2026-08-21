@@ -369,7 +369,7 @@
       color: var(--text-muted);
     }
 
-    /* ── Monograms ────────────────────────────────── */
+    /* ── Voice marks (desk color + per-voice shape) ── */
     .monogram {
       flex-shrink: 0;
       width: 30px;
@@ -378,15 +378,13 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
       background: var(--accent-tint, rgba(12, 27, 42, 0.08));
-      color: var(--accent, var(--navy));
       border: 1.5px solid var(--accent, var(--navy));
     }
 
-    .monogram.sm { width: 26px; height: 26px; font-size: 0.6rem; }
+    .monogram svg { width: 15px; height: 15px; display: block; }
+    .monogram.sm { width: 26px; height: 26px; }
+    .monogram.sm svg { width: 13px; height: 13px; }
 
     /* ── The River ────────────────────────────────── */
     .river-wrap {
@@ -503,6 +501,110 @@
 
     .read-link:hover { text-decoration: underline; }
 
+    .arxiu-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .arxiu-btn:hover { color: var(--navy); }
+    .arxiu-btn:disabled { cursor: default; }
+    .arxiu-btn.saved { color: #1D6E5A; }
+
+    /* ── Arxiu settings panel ─────────────────────── */
+    #arxiu-panel {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 8px 32px rgba(12, 27, 42, 0.12);
+      z-index: 500;
+      width: 320px;
+      max-width: calc(100vw - 48px);
+    }
+
+    #arxiu-panel h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.75rem;
+    }
+
+    .settings-field label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .settings-field input {
+      width: 100%;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 0.45rem 0.7rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      color: var(--text-body);
+    }
+
+    .settings-field input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
+    }
+
+    .settings-note {
+      font-size: 0.67rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+      line-height: 1.45;
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 1rem;
+    }
+
+    .settings-save {
+      background: var(--navy);
+      color: white;
+      border: none;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .settings-save:hover { background: var(--navy-mid); }
+
+    .settings-cancel {
+      background: none;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      padding: 0.45rem 0.75rem;
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
     /* ── Empty state ──────────────────────────────── */
     .empty {
       padding: 4rem 1rem;
@@ -592,7 +694,27 @@
 
   <footer>
     <strong>AI Voices</strong> — Essays &amp; commentary from a curated roster, collected via Google Sheets
+    <br><button onclick="openArxiuSettings()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.72rem;cursor:pointer;margin-top:0.5rem;font-family:inherit;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">⚙️ Arxiu settings</button>
   </footer>
+
+  <!-- Arxiu Settings Panel -->
+  <div id="arxiu-panel">
+    <h3>🗂 Arxiu</h3>
+    <div class="settings-field">
+      <label>Apps Script web app URL</label>
+      <input type="url" id="arxiu-url-input" placeholder="https://script.google.com/macros/s/…/exec" />
+      <p class="settings-note">"Save to Arxiu" sends each essay to your voices Apps Script, which builds a PDF named <em>LastName - Year - Title</em> in the Drive folder "Arxiu — AI Voices". To get the URL: Apps Script editor → Deploy → New deployment → Web app (Execute as: Me · Access: Anyone) → copy the /exec URL. See the README.</p>
+    </div>
+    <div class="settings-field" id="arxiu-bm-wrap" style="display:none;margin-top:0.9rem;">
+      <label>Bookmarklet — full text, your subscriptions</label>
+      <p class="settings-note">For paywalled articles (FT, NYT, Economist…): drag this button to your bookmarks bar, then click it while reading any article. It sends the full text as your logged-in browser sees it to the same PDF pipeline.</p>
+      <p style="margin-top:0.55rem;"><a id="arxiu-bookmarklet" onclick="return false;" title="Drag me to your bookmarks bar" style="display:inline-block;background:var(--navy);color:#fff;padding:0.4rem 0.95rem;border-radius:999px;font-size:0.75rem;font-weight:700;text-decoration:none;cursor:grab;">→ Arxiu</a></p>
+    </div>
+    <div class="settings-actions">
+      <button class="settings-cancel" onclick="closeArxiuSettings()">Cancel</button>
+      <button class="settings-save" onclick="saveArxiuSettings()">Save</button>
+    </div>
+  </div>
 
   <script>
     // ── Configuration ──────────────────────────────
@@ -607,38 +729,60 @@
       'Culture & Society':      '#7A4E92',
     };
 
-    // ── Per-voice accent colors ────────────────────
-    const VOICE_ACCENTS = {
-      'Zvi Mowshowitz':          '#8C6D1F',
-      'Jack Clark':              '#1D6E5A',
-      'Nathan Lambert':          '#2C68C9',
-      'Ethan Mollick':           '#4E7A3B',
-      'Sebastian Raschka':       '#B85C38',
-      'swyx & Alessio':          '#7059B8',
-      'Simon Willison':          '#6B7A1F',
-      'Dwarkesh Patel':          '#C25746',
-      'Gary Marcus':             '#B3446C',
-      'Ben Thompson':            '#4A6785',
-      'Dylan Patel':             '#7A4E92',
-      'Casey Newton':            '#2F8FA3',
-      'Alberto Romero':          '#B07D2B',
-      'Jeffrey Ding':            '#B23A48',
-      'Helen Toner':             '#33707E',
-      'Timothy B. Lee':          '#5B71C9',
-      'L.M. Sacasas':            '#6E5E8C',
-      'Erik Hoel':               '#5E8CA6',
-      'Brian Merchant':          '#A63A2E',
-      'Tressie McMillan Cottom': '#8F2D56',
-      'Yuval Noah Harari':       '#1F5E8C',
-      'Ted Chiang':              '#178A7E',
+    // ── Voice marks ────────────────────────────────
+    // Every voice wears its desk's muted color; within a desk each
+    // voice is distinguished by a small geometric mark (filled and
+    // outlined variants double the vocabulary).
+    const SHAPES = {
+      'circle':     '<circle cx="12" cy="12" r="7.2" fill="currentColor"/>',
+      'circle-o':   '<circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="2"/>',
+      'diamond':    '<path d="M12 4.2 L19.8 12 L12 19.8 L4.2 12 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+      'diamond-o':  '<path d="M12 4.6 L19.4 12 L12 19.4 L4.6 12 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+      'triangle':   '<path d="M12 5.2 L19.4 18.4 L4.6 18.4 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+      'triangle-o': '<path d="M12 5.6 L19 18 L5 18 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+      'square':     '<rect x="5.8" y="5.8" width="12.4" height="12.4" rx="2.4" fill="currentColor"/>',
+      'square-o':   '<rect x="6.2" y="6.2" width="11.6" height="11.6" rx="2.4" fill="none" stroke="currentColor" stroke-width="2"/>',
+      'hex':        '<path d="M12 4 L18.9 8 L18.9 16 L12 20 L5.1 16 L5.1 8 Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
+      'hex-o':      '<path d="M12 4.6 L18.4 8.3 L18.4 15.7 L12 19.4 L5.6 15.7 L5.6 8.3 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+    };
+
+    const VOICE_SHAPES = {
+      // Researchers & Builders
+      'Zvi Mowshowitz':          'circle',
+      'Jack Clark':              'circle-o',
+      'Nathan Lambert':          'diamond',
+      'Ethan Mollick':           'diamond-o',
+      'Sebastian Raschka':       'triangle',
+      'swyx & Alessio':          'triangle-o',
+      'Simon Willison':          'square',
+      'Dwarkesh Patel':          'square-o',
+      'Gary Marcus':             'hex',
+      // Industry & Chips
+      'Ben Thompson':            'circle',
+      'Dylan Patel':             'diamond',
+      'Casey Newton':            'triangle',
+      'Alberto Romero':          'square',
+      // Policy & China
+      'Jeffrey Ding':            'circle',
+      'Helen Toner':             'diamond',
+      'Timothy B. Lee':          'triangle',
+      // Culture & Society
+      'L.M. Sacasas':            'circle',
+      'Erik Hoel':               'circle-o',
+      'Brian Merchant':          'diamond',
+      'Tressie McMillan Cottom': 'diamond-o',
+      'Yuval Noah Harari':       'triangle',
+      'Ted Chiang':              'triangle-o',
     };
 
     // ── State ──────────────────────────────────────
     let allPosts = [];
+    let renderedPosts = [];
     let currentDesk = 'all';
     let currentVoice = 'all';
     let currentDays = null; // null = all
     let isDemo = false;
+    let arxiuUrl = localStorage.getItem('arxiu-webapp-url') || '';
 
     // ── Utilities ──────────────────────────────────
     function escapeHtml(str) {
@@ -677,8 +821,14 @@
       return Math.abs(hash);
     }
 
-    function accentFor(person) {
-      return VOICE_ACCENTS[person] || `hsl(${hashString(person) % 360}, 42%, 38%)`;
+    function deskColorFor(desk) {
+      return DESK_COLORS[desk] || '#0C1B2A';
+    }
+
+    function shapeFor(person) {
+      if (VOICE_SHAPES[person]) return VOICE_SHAPES[person];
+      const keys = Object.keys(SHAPES);
+      return keys[hashString(person) % keys.length];
     }
 
     function hexToTint(color, alpha) {
@@ -692,13 +842,6 @@
       return color.replace('hsl(', 'hsla(').replace(')', `, ${alpha})`);
     }
 
-    function monogramOf(person) {
-      const words = person.split(/\s+/).filter(w => /[a-zA-Z]/.test(w));
-      if (words.length === 0) return '?';
-      const first = words[0].replace(/[^a-zA-Z]/g, '').charAt(0);
-      const last = words.length > 1 ? words[words.length - 1].replace(/[^a-zA-Z]/g, '').charAt(0) : '';
-      return (first + last).toUpperCase();
-    }
 
     function timeAgo(date) {
       const diff = Date.now() - date;
@@ -792,9 +935,10 @@
     }
 
     // ── Rendering ──────────────────────────────────
-    function monogramHtml(person, small) {
-      const accent = accentFor(person);
-      return `<span class="monogram${small ? ' sm' : ''}" style="--accent:${accent};--accent-tint:${hexToTint(accent, 0.12)};">${escapeHtml(monogramOf(person))}</span>`;
+    function markHtml(person, desk, small) {
+      const color = deskColorFor(desk);
+      const shape = SHAPES[shapeFor(person)] || SHAPES['circle'];
+      return `<span class="monogram${small ? ' sm' : ''}" style="--accent:${color};--accent-tint:${hexToTint(color, 0.1)};color:${color};" title="${escapeHtml(person)}"><svg viewBox="0 0 24 24" aria-hidden="true">${shape}</svg></span>`;
     }
 
     function renderLatestStrip(posts) {
@@ -815,11 +959,11 @@
       section.style.display = '';
 
       strip.innerHTML = cards.map(p => {
-        const accent = accentFor(p.person);
+        const accent = deskColorFor(p.desk);
         return `
-        <a class="latest-card" style="--accent:${accent};--accent-tint:${hexToTint(accent, 0.12)};" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">
+        <a class="latest-card" style="--accent:${accent};--accent-tint:${hexToTint(accent, 0.1)};" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">
           <div class="latest-top">
-            ${monogramHtml(p.person, true)}
+            ${markHtml(p.person, p.desk, true)}
             <div class="latest-who">
               <div class="latest-name">${escapeHtml(p.person)}</div>
               <div class="latest-pub">${escapeHtml(p.publication)}</div>
@@ -838,17 +982,18 @@
         return;
       }
 
-      river.innerHTML = posts.map(p => {
-        const deskColor = DESK_COLORS[p.desk] || '#0C1B2A';
+      river.innerHTML = posts.map((p, i) => {
+        const deskColor = deskColorFor(p.desk);
         const metaBits = [];
         if (p.minutes > 0) metaBits.push(`<span>${p.minutes} min read</span>`);
         if (p.kind === 'press') metaBits.push('<span class="press-label">In the press</span>');
         metaBits.push(`<a class="read-link" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">Read &rarr;</a>`);
+        metaBits.push(`<button class="arxiu-btn" data-idx="${i}" title="Save a PDF to your Drive arxiu">Save to Arxiu</button>`);
 
         return `
         <article class="entry">
           <div class="byline">
-            ${monogramHtml(p.person, false)}
+            ${markHtml(p.person, p.desk, false)}
             <span class="byline-name">${escapeHtml(p.person)}</span>
             <span class="byline-sep">&middot;</span>
             <span class="byline-pub">${escapeHtml(p.publication)}</span>
@@ -881,6 +1026,7 @@
       }
 
       filtered.sort((a, b) => b.date - a.date);
+      renderedPosts = filtered;
       renderRiver(filtered);
 
       const voiceCount = new Set(filtered.map(p => p.person)).size;
@@ -890,19 +1036,107 @@
     }
 
     // ── Filter events ──────────────────────────────
+    // Desk and voice filters are mutually exclusive: picking one
+    // resets the other, so you can never land on an empty overlap.
     document.querySelectorAll('.desk-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         document.querySelectorAll('.desk-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         currentDesk = chip.dataset.desk;
+        if (currentVoice !== 'all') {
+          currentVoice = 'all';
+          document.getElementById('voiceSelect').value = 'all';
+        }
         filterAndRender();
       });
     });
 
     document.getElementById('voiceSelect').addEventListener('change', e => {
       currentVoice = e.target.value;
+      if (currentVoice !== 'all' && currentDesk !== 'all') {
+        currentDesk = 'all';
+        document.querySelectorAll('.desk-chip').forEach(c =>
+          c.classList.toggle('active', c.dataset.desk === 'all'));
+      }
       filterAndRender();
     });
+
+    // ── Arxiu: save a post as PDF to Drive ─────────
+    document.getElementById('river').addEventListener('click', e => {
+      const btn = e.target.closest('.arxiu-btn');
+      if (btn) archivePost(parseInt(btn.dataset.idx, 10), btn);
+    });
+
+    function archivePost(idx, btn) {
+      const p = renderedPosts[idx];
+      if (!p) return;
+      if (!arxiuUrl) { openArxiuSettings(); return; }
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      fetch(arxiuUrl, {
+        method: 'POST',
+        mode: 'no-cors', // fire-and-forget, same pattern as tag sync
+        body: JSON.stringify({
+          title: p.title,
+          person: p.person,
+          publication: p.publication,
+          link: p.link,
+          year: p.date.getFullYear()
+        })
+      })
+        .then(() => { btn.textContent = 'Saved to Arxiu ✓'; btn.classList.add('saved'); })
+        .catch(() => { btn.textContent = 'Failed — retry'; btn.disabled = false; });
+    }
+
+    // Bookmarklet: run on any article page (with your logged-in session,
+    // so subscriber sites send the full text) and post it to the arxiu.
+    function bookmarkletHref(url) {
+      const code = "(function(){var u=" + JSON.stringify(url) + ";" +
+        "function g(s){var e=document.querySelector(s);return e&&(e.content||e.textContent)||''}" +
+        "var t=g('meta[property=\"og:title\"]')||document.title;" +
+        "var a=g('meta[name=\"author\"]')||g('meta[property=\"article:author\"]')||g('meta[name=\"byl\"]')||'';" +
+        "a=(a||prompt('Author for the filename:','')||'Unknown').replace(/^By\\s+/i,'');" +
+        "var d=g('meta[property=\"article:published_time\"]');" +
+        "var y=(d&&d.slice(0,4))||String(new Date().getFullYear());" +
+        "var art=document.querySelector('article')||document.body;" +
+        "var ps=Array.prototype.slice.call(art.querySelectorAll('p,h2,h3,blockquote')).map(function(e){return e.innerText.trim()}).filter(function(x){return x.length>40}).slice(0,400);" +
+        "fetch(u,{method:'POST',mode:'no-cors',body:JSON.stringify({title:t,person:a,publication:location.hostname.replace(/^www\\./,''),link:location.href,year:y,text:ps})})" +
+        ".then(function(){alert('Saved to Arxiu \\u2713')})" +
+        ".catch(function(){alert('This site blocked the request \\u2014 archive it from the tracker page instead.')})" +
+        "})();";
+      return 'javascript:' + encodeURIComponent(code);
+    }
+
+    function refreshBookmarkletUi() {
+      const wrap = document.getElementById('arxiu-bm-wrap');
+      if (arxiuUrl) {
+        document.getElementById('arxiu-bookmarklet').setAttribute('href', bookmarkletHref(arxiuUrl));
+        wrap.style.display = 'block';
+      } else {
+        wrap.style.display = 'none';
+      }
+    }
+
+    function openArxiuSettings() {
+      document.getElementById('arxiu-url-input').value = arxiuUrl;
+      refreshBookmarkletUi();
+      document.getElementById('arxiu-panel').style.display = 'block';
+    }
+    function closeArxiuSettings() {
+      document.getElementById('arxiu-panel').style.display = 'none';
+    }
+    function saveArxiuSettings() {
+      const raw = document.getElementById('arxiu-url-input').value.trim();
+      // Only Apps Script endpoints — prevents posting reading data elsewhere
+      if (raw && !raw.startsWith('https://script.google.com/')) {
+        alert('The Arxiu URL must start with https://script.google.com/');
+        return;
+      }
+      arxiuUrl = raw;
+      localStorage.setItem('arxiu-webapp-url', arxiuUrl);
+      refreshBookmarkletUi();
+      if (!arxiuUrl) closeArxiuSettings();
+    }
 
     const daysInput = document.getElementById('daysInput');
     function applyDays() {
