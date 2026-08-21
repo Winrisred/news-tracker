@@ -1111,9 +1111,82 @@ function onOpen() {
     .addItem("Reformat all sheets", "reformatAllSheets")
     .addItem("Reorder sheet tabs", "reorderSheetsManual")
     .addItem("Backfill authors", "backfillAuthors")
+    .addItem("Cleanup false AISI tags", "cleanupAisiFalsePositives")
     .addSeparator()
     .addItem("Test AISI scrape (debug)", "testAisiScrape")
     .addToUi();
+}
+
+// One-time cleanup: the old bare "aisi" keyword substring-matched words
+// like "raising"/"praising", falsely tagging unrelated articles as AISI.
+// Keeps AISI on scraped AISI posts (Source = "AISI") and on articles whose
+// headline genuinely mentions the institute; strips it everywhere else.
+// Rows left with no companies AND no topics are deleted outright — they
+// only survived the relevance filter because of the false match.
+function cleanupAisiFalsePositives() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var monthRegex = /^\d{4}-\d{2}$/;
+  var realAisi = ["ai safety institute", "ai security institute", "uk ai safety"];
+  var cleaned = 0, deleted = 0;
+
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var name = sheet.getName();
+    if (name !== MASTER_SHEET && !monthRegex.test(name)) continue;
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) continue;
+
+    var data = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+
+    // Bottom-up so row deletions don't shift the rows still to process
+    for (var i = data.length - 1; i >= 0; i--) {
+      var row = data[i];
+      var companies = String(row[6] || "");
+      if (companies.indexOf("AISI") < 0) continue;
+      if (String(row[3]) === "AISI") continue; // scraped AISI blog post
+
+      var headline = String(row[1] || "").toLowerCase();
+      var legit = false;
+      for (var k = 0; k < realAisi.length; k++) {
+        if (headline.indexOf(realAisi[k]) >= 0) { legit = true; break; }
+      }
+      if (legit) continue;
+
+      var newCompanies = removeTag_(companies, "AISI");
+      var topics = String(row[7] || "").trim();
+      var newTags = removeTag_(String(row[8] || ""), "AISI");
+
+      if (!newCompanies && !topics) {
+        sheet.deleteRow(i + 2);
+        deleted++;
+      } else {
+        sheet.getRange(i + 2, 7).setValue(newCompanies);
+        sheet.getRange(i + 2, 9).setValue(newTags);
+        cleaned++;
+      }
+    }
+  }
+
+  var master = ss.getSheetByName(MASTER_SHEET);
+  if (master) updateSummary_(ss, master);
+
+  SpreadsheetApp.getUi().alert(
+    "AISI cleanup complete.\n\n" +
+    "Rows fixed (false AISI tag removed): " + cleaned + "\n" +
+    "Rows deleted (no other tags left): " + deleted + "\n\n" +
+    "Counts include monthly-tab copies of the same article."
+  );
+}
+
+function removeTag_(list, tag) {
+  var parts = String(list).split(",");
+  var kept = [];
+  for (var i = 0; i < parts.length; i++) {
+    var t = parts[i].trim();
+    if (t && t !== tag) kept.push(t);
+  }
+  return kept.join(", ");
 }
 
 function reformatAllSheets() {

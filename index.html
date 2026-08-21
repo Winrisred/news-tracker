@@ -113,6 +113,15 @@
       margin-bottom: 0.5rem;
     }
 
+    .header-version {
+      text-transform: none;
+      font-weight: 500;
+      font-size: 0.62rem;
+      opacity: 0.75;
+      margin-left: 0.35rem;
+      letter-spacing: 0.1em;
+    }
+
     h1 {
       font-family: 'DM Serif Display', Georgia, serif;
       font-size: 2.6rem;
@@ -823,7 +832,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker</div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -987,7 +996,7 @@
   </div>
 
   <footer>
-    <strong>AI & BigTech News Tracker</strong> v2 — Data from RSS feeds, updated hourly via Google Sheets
+    <strong>AI & BigTech News Tracker</strong> — Data from RSS feeds, updated hourly via Google Sheets
     <br><button onclick="openSettings()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:0.72rem;cursor:pointer;margin-top:0.5rem;font-family:inherit;transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">⚙️ Tag sync settings</button>
   </footer>
 
