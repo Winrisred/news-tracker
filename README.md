@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.4** (2026-08)
+**Current version: v3.5** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -143,6 +143,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.5** (2026-08) — AIID stream rebuilt as one row per **incident**: the RSS (one item per report, dated by ingestion) now only discovers incident numbers; each incident's real date, canonical title, and description come from the site's page-data JSON. Fixes duplicate rows and wrong dates (`rebuildAiidRows()` migrates existing rows).
 - **v3.4** (2026-08) — Voice portraits live: 18 sketch illustrations in images/voices/ (originals + web-optimized 480px JPEGs, ~50KB each; the page tries `.jpg` then `.png` then the placeholder). Files renamed to the canonical slugs.
 - **v3.3** (2026-08) — AIID headlines link to the incident record on incidentdatabase.ai (always reachable) instead of the cited article, which is often geo-blocked for EEA visitors (HTTP 451) or rots; the original report stays as a secondary link.
 - **v3.2** (2026-08) — Incidents page live (CSV wired). Undated AIAAIC records handled honestly: blank date in the sheet, "Undated" on the page, sorted last (`repairUndatedAiaaic()` fixes rows from the first backfill).

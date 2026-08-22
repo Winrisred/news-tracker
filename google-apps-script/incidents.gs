@@ -1,6 +1,6 @@
 // ============================================================
 // AI Incidents Tracker — Google Apps Script
-// Version: v3.2 (2026-08)
+// Version: v3.5 (2026-08)
 //
 // Collects AI incident records from two public registries and
 // stores them in Google Sheets for the incidents.html ledger:
@@ -28,7 +28,7 @@
 //      paste the URL into INCIDENTS_CSV_URL in incidents.html
 // ============================================================
 
-const SCRIPT_VERSION = "v3.2";
+const SCRIPT_VERSION = "v3.5";
 
 const MASTER_SHEET = "All Incidents";
 const SUMMARY_SHEET = "Summary";
@@ -63,11 +63,11 @@ function fetchIncidents() {
   }
 
   try {
-    var aiid = fetchAiid_();
+    var aiid = fetchAiid_(existingKeys);
     for (var j = 0; j < aiid.length; j++) {
-      if (!existingKeys[aiid[j].link]) {
+      if (!existingKeys[aiid[j].id]) {
         newItems.push(aiid[j]);
-        existingKeys[aiid[j].link] = true;
+        existingKeys[aiid[j].id] = true;
       }
     }
   } catch (e) {
@@ -154,10 +154,17 @@ function fetchAiaaic_() {
 
 
 // ============================================================
-// AIID (RSS of newly added incident reports)
+// AIID (one row per INCIDENT, with the canonical record)
 // ============================================================
+// The RSS emits one item per REPORT, dated by when the report was
+// added — not when the incident happened, and one incident collects
+// many reports. So the RSS is used only to discover incident numbers;
+// each NEW number's real record (date, title, description) is then
+// fetched from the site's page-data JSON.
 
-function fetchAiid_() {
+const AIID_MAX_LOOKUPS = 40; // canonical-record fetches per run
+
+function fetchAiid_(existingKeys) {
   var items = [];
   var response = UrlFetchApp.fetch(AIID_RSS_URL, {
     muteHttpExceptions: true,
@@ -173,46 +180,83 @@ function fetchAiid_() {
   var channel = root.getChild("channel");
   if (!channel) return items;
 
+  // Discover unique incident numbers; keep the newest report's article
+  // link per incident (RSS is newest-first)
+  var byIncident = {};
   var rssItems = channel.getChildren("item");
   for (var i = 0; i < rssItems.length; i++) {
     var item = rssItems[i];
-    var title = cleanText_(getChildText_(item, "title"));
     var link = getChildText_(item, "link").trim();
-    if (!title || !link) continue;
-
-    var description = getChildText_(item, "description");
-    var citeMatch = description.match(/https:\/\/incidentdatabase\.ai\/cite\/(\d+)[^\s)"]*/);
-    var citeLink = citeMatch ? citeMatch[0] : "";
-    var incidentNo = citeMatch ? "#" + citeMatch[1] : "";
-
-    var snippet = cleanText_(description.replace(/\(?https:\/\/incidentdatabase\.ai\/cite\/[^\s)"]*\)?/g, ""));
-    snippet = snippet.replace(/\s*\.\.\.\s*$/, "…");
-    if (snippet.length > 240) {
-      snippet = snippet.substring(0, 240);
-      var sp = snippet.lastIndexOf(" ");
-      if (sp > 150) snippet = snippet.substring(0, sp);
-      snippet += "…";
-    }
-
+    var citeMatch = getChildText_(item, "description").match(/https:\/\/incidentdatabase\.ai\/cite\/(\d+)/);
+    if (!citeMatch || !link) continue;
+    var num = citeMatch[1];
+    if (byIncident[num]) continue;
     var outlet = "";
     var hostMatch = link.match(/^https?:\/\/(?:www\.)?([^\/]+)/i);
     if (hostMatch) outlet = hostMatch[1];
+    byIncident[num] = { link: link, outlet: outlet };
+  }
 
+  var fetched = 0;
+  for (var n in byIncident) {
+    if (existingKeys && existingKeys["#" + n]) continue; // already stored
+    if (fetched >= AIID_MAX_LOOKUPS) break;
+    var rec = fetchAiidIncident_(n);
+    fetched++;
+    if (!rec) continue;
     items.push({
-      date: parseDate_(getChildText_(item, "pubDate")),
+      date: rec.date,
       source: "AIID",
-      id: incidentNo,
-      headline: title,
-      link: link,
-      citeLink: citeLink,
-      outlet: outlet,
+      id: "#" + n,
+      headline: rec.title,
+      link: byIncident[n].link,
+      citeLink: "https://incidentdatabase.ai/cite/" + n,
+      outlet: byIncident[n].outlet,
       deployer: "", developer: "", system: "", technology: "",
       jurisdiction: "", sector: "",
       harms: "",
-      snippet: snippet
+      snippet: rec.description
     });
   }
   return items;
+}
+
+// Canonical incident record from the Gatsby page-data JSON
+function fetchAiidIncident_(num) {
+  try {
+    var resp = UrlFetchApp.fetch("https://incidentdatabase.ai/page-data/cite/" + num + "/page-data.json", {
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
+    });
+    if (resp.getResponseCode() !== 200) return null;
+    var inc = findIncident_(JSON.parse(resp.getContentText()), 0);
+    if (!inc) return null;
+
+    var title = cleanText_(String(inc.title || ""));
+    if (!title) return null;
+    var desc = cleanText_(String(inc.description || ""));
+    if (desc.length > 240) {
+      desc = desc.substring(0, 240);
+      var sp = desc.lastIndexOf(" ");
+      if (sp > 150) desc = desc.substring(0, sp);
+      desc += "…";
+    }
+    return { date: parseDate_(String(inc.date || "")), title: title, description: desc };
+  } catch (e) {
+    Logger.log("AIID incident " + num + ": " + e.message);
+    return null;
+  }
+}
+
+function findIncident_(o, depth) {
+  if (depth > 6 || !o || typeof o !== "object") return null;
+  if (o.incident_id && (o.date || o.title)) return o;
+  for (var k in o) {
+    var r = findIncident_(o[k], depth + 1);
+    if (r) return r;
+  }
+  return null;
 }
 
 
@@ -491,6 +535,32 @@ function repairUndatedAiaaic() {
   SpreadsheetApp.getUi().alert("Repaired " + fixed + " undated AIAAIC rows (dates blanked; they now sort last).");
 }
 
+// One-time: earlier versions stored one AIID row per report, dated by
+// when the report was added. Deletes all AIID rows and refetches them
+// as one-per-incident with real incident dates and canonical titles.
+function rebuildAiidRows() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var master = ss.getSheetByName(MASTER_SHEET);
+  if (!master || master.getLastRow() <= 1) return;
+
+  var lastRow = master.getLastRow();
+  var sources = master.getRange(2, 2, lastRow - 1, 1).getValues();
+  var removed = 0;
+  for (var i = sources.length - 1; i >= 0; i--) {
+    if (String(sources[i][0]).trim() === "AIID") {
+      master.deleteRow(i + 2);
+      removed++;
+    }
+  }
+
+  fetchIncidents();
+  SpreadsheetApp.getUi().alert(
+    "AIID rows rebuilt.\n\n" +
+    "Old report rows removed: " + removed + "\n" +
+    "Refetched as one row per incident (real dates, canonical titles)."
+  );
+}
+
 // Fetch both sources and log counts without writing — debugging aid
 function testSources() {
   var a = [], b = [];
@@ -523,6 +593,7 @@ function onOpen() {
     .addItem("Update summary", "updateSummaryManual")
     .addItem("Reformat all sheets", "reformatAllSheets")
     .addItem("Repair undated rows", "repairUndatedAiaaic")
+    .addItem("Rebuild AIID rows", "rebuildAiidRows")
     .addItem("Test sources (debug)", "testSources")
     .addToUi();
 }
