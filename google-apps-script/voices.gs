@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.6 (2026-08)
+// Version: v3.8 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -84,6 +84,7 @@ const VOICES = [
   { person: "Jeffrey Ding",           publication: "ChinAI",                     desk: DESK_POLICY, type: "rss", url: "https://chinai.substack.com/feed" },
   { person: "Helen Toner",            publication: "Rising Tide",                desk: DESK_POLICY, type: "rss", url: "https://helentoner.substack.com/feed" },
   { person: "Timothy B. Lee",         publication: "Understanding AI",           desk: DESK_POLICY, type: "rss", url: "https://www.understandingai.org/feed" },
+  { person: "Audrey Tang",            publication: "Audrey Tang",                desk: DESK_POLICY, type: "rss", url: "https://audreyt.substack.com/feed" },
 
   // Culture & Society
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },

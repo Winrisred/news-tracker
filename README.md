@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.7** (2026-08)
+**Current version: v3.8** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -9,7 +9,7 @@ Automated news aggregator that collects AI and BigTech headlines from RSS feeds 
 Three pages, one identity:
 
 - **Headlines** (`index.html`) — the wire desk: hourly headlines from major outlets, filtered by company/topic keywords.
-- **Voices** (`voices.html`) — the reading room: essays & commentary from a curated roster of 23 AI voices (newsletters, blogs, and press coverage) in four desks: Researchers & Builders, Industry & Chips, Policy & China, Culture & Society. The landing view is a grid of author squares (portrait or styled placeholder, desk-colored); clicking a square opens that voice's posts. No keyword filtering — the roster is curated by author.
+- **Voices** (`voices.html`) — the reading room: essays & commentary from a curated roster of 24 AI voices (newsletters, blogs, and press coverage) in four desks: Researchers & Builders, Industry & Chips, Policy & China, Culture & Society. The landing view is a grid of author squares (portrait or styled placeholder, desk-colored); clicking a square opens that voice's posts. No keyword filtering — the roster is curated by author.
 - **Incidents** (`incidents.html`) — the accountability ledger: ~2,250 documented AI incidents from the [AIAAIC Repository](https://www.aiaaic.org/aiaaic-repository) (CC BY-SA 4.0, fetched from its public sheet) plus a live stream of new reports from the [AI Incident Database](https://incidentdatabase.ai) RSS. The two sources stay as parallel streams with distinct visuals (petrol-blue registry rows with taxonomy chips vs sienna report rows with snippets) — never merged or deduplicated across each other. Filters by source, year, sector, and full-text search.
 
 ## Setup
@@ -143,6 +143,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.8** (2026-08) — Audrey Tang joins Policy & China (audreyt.substack.com), with sketch portrait. Roster: 24.
 - **v3.7** (2026-08) — Search boxes on Headlines (headline/tags/source/author, combines with existing filters) and Voices (full-text over essays; results river replaces the grid while a query is active). All three pages now searchable.
 - **v3.6** (2026-08) — Four voices added: Melanie Mitchell (AI: A Guide for Thinking Humans) and Fei-Fei Li to Researchers & Builders; Jasmine Sun (jasmi.news) and Shoshana Zuboff to Culture & Society — with sketch portraits and two new marks (star/star-o). Roster: 23.
 - **v3.5** (2026-08) — AIID stream rebuilt as one row per **incident**: the RSS (one item per report, dated by ingestion) now only discovers incident numbers; each incident's real date, canonical title, and description come from the site's page-data JSON. Fixes duplicate rows and wrong dates (`rebuildAiidRows()` migrates existing rows).
