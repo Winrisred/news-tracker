@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.8 (2026-08)
+// Version: v3.9 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -72,6 +72,7 @@ const VOICES = [
   { person: "Dwarkesh Patel",         publication: "Dwarkesh Podcast",           desk: DESK_RESEARCH, type: "rss", url: "https://www.dwarkesh.com/feed" },
   { person: "Gary Marcus",            publication: "Marcus on AI",               desk: DESK_RESEARCH, type: "rss", url: "https://garymarcus.substack.com/feed" },
   { person: "Melanie Mitchell",       publication: "AI: A Guide for Thinking Humans", desk: DESK_RESEARCH, type: "rss", url: "https://aiguide.substack.com/feed" },
+  { person: "Arvind Narayanan",       publication: "AI as Normal Technology",    desk: DESK_RESEARCH, type: "rss", url: "https://aisnakeoil.substack.com/feed" },
   { person: "Fei-Fei Li",             publication: "Dr. Fei-Fei Li",             desk: DESK_RESEARCH, type: "rss", url: "https://drfeifei.substack.com/feed" },
 
   // Industry & Chips
@@ -85,6 +86,7 @@ const VOICES = [
   { person: "Helen Toner",            publication: "Rising Tide",                desk: DESK_POLICY, type: "rss", url: "https://helentoner.substack.com/feed" },
   { person: "Timothy B. Lee",         publication: "Understanding AI",           desk: DESK_POLICY, type: "rss", url: "https://www.understandingai.org/feed" },
   { person: "Audrey Tang",            publication: "Audrey Tang",                desk: DESK_POLICY, type: "rss", url: "https://audreyt.substack.com/feed" },
+  { person: "Frederike Kaltheuner",   publication: "Frederike Kaltheuner",       desk: DESK_POLICY, type: "rss", url: "https://frederikekaltheuner1.substack.com/feed" },
 
   // Culture & Society
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
