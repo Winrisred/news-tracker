@@ -832,7 +832,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.8</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.9</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -1794,15 +1794,39 @@
       }
     });
 
-    // ── Load Data ────────────────────────────────
+    // ── Load Data (stale-while-revalidate) ───────
+    // Switching between Headlines and Voices used to re-fetch and
+    // re-render everything. Now the last downloaded CSV renders
+    // instantly; the network is only consulted when that copy is older
+    // than DATA_FRESH_MS, and updates apply quietly in the background.
+    const DATA_CACHE_KEY = 'news-csv-cache-v1';
+    const DATA_FRESH_MS = 10 * 60 * 1000; // Google republishes CSVs ~every few minutes
+
+    function applyCsv(text) {
+      allArticles = parseCSV(text);
+      allArticles.sort((a, b) => b.date - a.date);
+      filterAndRender();
+    }
+
     async function loadData() {
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null'); } catch (e) {}
+
+      if (cached && cached.csv) {
+        applyCsv(cached.csv); // instant paint from the last download
+        if (Date.now() - cached.at < DATA_FRESH_MS) return; // fresh enough — no network
+      }
+
       try {
         const response = await fetch(SHEET_CSV_URL);
         if (!response.ok) throw new Error('HTTP ' + response.status);
-        allArticles = parseCSV(await response.text());
-        allArticles.sort((a, b) => b.date - a.date);
-        filterAndRender();
+        const text = await response.text();
+        try { localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({ at: Date.now(), csv: text })); } catch (e) {}
+        if (cached && cached.csv === text) return;        // nothing changed
+        if (cached && window.scrollY > 200) return;       // don't yank the page mid-read
+        applyCsv(text);
       } catch (e) {
+        if (cached && cached.csv) return; // stale data beats an error page
         document.getElementById('newsGrid').innerHTML = `
           <div class="empty">
             <p>Could not load news data.</p>

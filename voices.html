@@ -644,7 +644,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.8</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v2.9</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1167,15 +1167,37 @@
     // Select the current value on focus so typing a number replaces "all"
     daysInput.addEventListener('focus', () => setTimeout(() => daysInput.select(), 0));
 
-    // ── Load Data ──────────────────────────────────
+    // ── Load Data (stale-while-revalidate) ─────────
+    // Same pattern as the Headlines page: instant render from the last
+    // downloaded CSV, background refresh only when it has gone stale.
+    const DATA_CACHE_KEY = 'voices-csv-cache-v1';
+    const DATA_FRESH_MS = 10 * 60 * 1000;
+
+    function applyCsv(text) {
+      allPosts = parseCSV(text);
+      buildVoiceSelect();
+      filterAndRender();
+    }
+
     async function loadData() {
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null'); } catch (e) {}
+
+      if (cached && cached.csv) {
+        applyCsv(cached.csv); // instant paint from the last download
+        if (Date.now() - cached.at < DATA_FRESH_MS) return;
+      }
+
       try {
         const response = await fetch(VOICES_CSV_URL);
         if (!response.ok) throw new Error('HTTP ' + response.status);
-        allPosts = parseCSV(await response.text());
-        buildVoiceSelect();
-        filterAndRender();
+        const text = await response.text();
+        try { localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({ at: Date.now(), csv: text })); } catch (e) {}
+        if (cached && cached.csv === text) return;
+        if (cached && window.scrollY > 200) return;
+        applyCsv(text);
       } catch (e) {
+        if (cached && cached.csv) return; // stale data beats an error page
         document.getElementById('river').innerHTML = `
           <div class="empty">
             <p>Could not load the voices data.</p>
