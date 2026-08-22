@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v2.9** (2026-08)
+**Current version: v3.0** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -9,7 +9,7 @@ Automated news aggregator that collects AI and BigTech headlines from RSS feeds 
 Two pages, one identity:
 
 - **Headlines** (`index.html`) — the wire desk: hourly headlines from major outlets, filtered by company/topic keywords.
-- **Voices** (`voices.html`) — the reading room: essays & commentary from a curated roster of ~22 AI voices (newsletters, blogs, and press coverage), organized in four desks: Researchers & Builders, Industry & Chips, Policy & China, Culture & Society. No keyword filtering — the roster is curated by author.
+- **Voices** (`voices.html`) — the reading room: essays & commentary from a curated roster of 19 AI voices (newsletters, blogs, and press coverage) in four desks: Researchers & Builders, Industry & Chips, Policy & China, Culture & Society. The landing view is a grid of author squares (portrait or styled placeholder, desk-colored); clicking a square opens that voice's posts. No keyword filtering — the roster is curated by author.
 
 ## Setup
 
@@ -45,6 +45,10 @@ Tabs are auto-ordered after each fetch, matching the news sheet: **Summary** →
 The roster lives in the `VOICES` array at the top of `voices.gs` — add a voice by adding one line (any RSS/Atom feed works: Substack, Ghost, WordPress, plain blogs). For voices without a feed, use a Bing News search RSS URL (`https://www.bing.com/news/search?q=...&format=rss`) with `type: "gnews"` — it collects press coverage by and about them, and the script unwraps Bing's redirect links into direct article URLs. (Google News query URLs also work but their links bounce via a redirect + EU consent wall.)
 
 Every voice wears its **desk's color**; within a desk, voices are told apart by a small geometric **mark** (filled/outlined circle, diamond, triangle, square, hexagon) assigned in `VOICE_SHAPES` in `voices.html` — unknown voices get one by hash.
+
+**Author photos**: each grid square looks for `images/voices/<slug>.jpg` — the slug is the lowercase name with non-alphanumerics as hyphens (`zvi-mowshowitz.jpg`, `swyx-alessio.jpg`, `timothy-b-lee.jpg`; full list in `images/voices/README.md`). Drop a photo in and it appears with an automatic duotone treatment (grayscale over the desk-color wash) so portraits from different sources look like one consistent set; square-ish crops work best. Without a photo, the tile shows the voice's shape mark and initials on the navy gradient. Wikimedia Commons carries freely licensed portraits for most of these people — check each file's license and attribution requirements before adding it.
+
+**Retiring a voice**: delete its line from `VOICES` in voices.gs, add the name to `RETIRED_VOICES` (both in voices.gs and voices.html), and run **Voices Tracker → Remove retired voices** once to purge its stored rows.
 
 ### 5. Arxiu (save articles & essays as PDFs to Drive)
 
@@ -128,6 +132,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.0** (2026-08) — Voices redesigned as an **author grid**: squares with portraits (auto duotone via `images/voices/<slug>.jpg`) or shape-mark placeholders; clicking a square opens that voice's posts (hash-addressable, browser back works). Roster trimmed to 19 (retired Erik Hoel, L.M. Sacasas, Tressie McMillan Cottom; `removeRetiredVoices()` purges their rows). Voice dropdown and latest-strip retired with it.
 - **v2.9** (2026-08) — Instant page switching: both pages cache the downloaded CSV in localStorage and render from it immediately; the network is consulted only when the copy is over 10 minutes old, with quiet background updates (skipped mid-scroll so the page never jumps). Stale data also stands in when the network fails.
 - **v2.8** (2026-08) — Bookmarklet author detection via JSON-LD structured data (fixes "Unknown" on sites like Yahoo where the byline isn't in meta tags); publication from og:site_name; success alert echoes the captured author/year. Client-side only — re-drag the bookmarklet, no redeploy.
 - **v2.7** (2026-08) — Page numbers in Arxiu PDFs via an optional template Doc (`ARXIU_TEMPLATE_ID` in voices.gs): the script copies a Doc whose footer has page numbers, since Apps Script cannot insert page-number fields directly.

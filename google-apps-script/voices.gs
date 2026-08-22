@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v2.7 (2026-08)
+// Version: v3.0 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -27,7 +27,7 @@
 
 // ── Configuration ───────────────────────────────────────────
 
-const SCRIPT_VERSION = "v2.7"; // stamped into every PDF — verifies what's deployed
+const SCRIPT_VERSION = "v3.0"; // stamped into every PDF — verifies what's deployed
 
 // Optional: ID of a Google Doc used as the PDF template. Create a Doc,
 // add page numbers (Insert → Page numbers, e.g. bottom right), copy the
@@ -84,10 +84,7 @@ const VOICES = [
   { person: "Timothy B. Lee",         publication: "Understanding AI",           desk: DESK_POLICY, type: "rss", url: "https://www.understandingai.org/feed" },
 
   // Culture & Society
-  { person: "L.M. Sacasas",           publication: "The Convivial Society",      desk: DESK_CULTURE, type: "rss", url: "https://theconvivialsociety.substack.com/feed" },
-  { person: "Erik Hoel",              publication: "The Intrinsic Perspective",  desk: DESK_CULTURE, type: "rss", url: "https://www.theintrinsicperspective.com/feed" },
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
-  { person: "Tressie McMillan Cottom", publication: "essaying",                  desk: DESK_CULTURE, type: "rss", url: "https://tressie.substack.com/feed" },
   { person: "Yuval Noah Harari",      publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Yuval+Noah+Harari%22+AI&format=rss&mkt=en-US" },
   { person: "Ted Chiang",             publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Ted+Chiang%22+AI&format=rss&mkt=en-US" },
 ];
@@ -686,6 +683,41 @@ function rebuildMonthlySheets() {
   SpreadsheetApp.getUi().alert("Monthly tabs rebuilt: " + Object.keys(groups).sort().reverse().join(", "));
 }
 
+// Voices retired from the roster (v3.0). The web page also filters them
+// out; running removeRetiredVoices() deletes their stored rows for good.
+const RETIRED_VOICES = ["Erik Hoel", "L.M. Sacasas", "Tressie McMillan Cottom"];
+
+function removeRetiredVoices() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var monthRegex = /^\d{4}-\d{2}$/;
+  var removed = 0;
+
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var name = sheet.getName();
+    if (name !== MASTER_SHEET && !monthRegex.test(name)) continue;
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) continue;
+
+    var persons = sheet.getRange(2, 4, lastRow - 1, 1).getValues(); // Column D = Person
+    for (var i = persons.length - 1; i >= 0; i--) {
+      if (RETIRED_VOICES.indexOf(String(persons[i][0]).trim()) >= 0) {
+        sheet.deleteRow(i + 2);
+        removed++;
+      }
+    }
+  }
+
+  var master = ss.getSheetByName(MASTER_SHEET);
+  if (master) updateSummary_(ss, master);
+
+  SpreadsheetApp.getUi().alert(
+    "Removed " + removed + " rows from retired voices\n" +
+    "(" + RETIRED_VOICES.join(", ") + "), incl. monthly-tab copies."
+  );
+}
+
 // One-time: delete stored press rows (old Google News redirect links that
 // bounce via a consent wall) and refetch, so they come back with direct
 // article links from the Bing News feeds.
@@ -983,6 +1015,7 @@ function onOpen() {
     .addItem("Rebuild monthly tabs", "rebuildMonthlySheets")
     .addItem("Reformat all sheets", "reformatAllSheets")
     .addItem("Refresh press links", "refreshPressLinks")
+    .addItem("Remove retired voices", "removeRetiredVoices")
     .addItem("Test Arxiu PDF (debug)", "testArxiu")
     .addItem("Test first voice (debug)", "testOneVoice")
     .addToUi();

@@ -284,88 +284,167 @@
       font-weight: 500;
     }
 
-    /* ── Latest-from-each-voice strip ─────────────── */
-    .latest-section {
+    /* ── Voice grid (author squares) ──────────────── */
+    .grid-wrap {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 1.25rem 2rem 0;
+      padding: 1.5rem 2rem 3rem;
     }
 
-    .section-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--navy);
-      margin-bottom: 0.75rem;
+    .voice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      gap: 1.1rem;
     }
 
-    .latest-strip {
+    .voice-tile {
       display: flex;
-      gap: 0.85rem;
-      overflow-x: auto;
-      padding-bottom: 0.85rem;
-      scrollbar-width: thin;
-    }
-
-    .latest-card {
-      flex: 0 0 235px;
+      flex-direction: column;
       background: var(--white);
       border: 1px solid var(--border-light);
       border-radius: var(--radius);
-      padding: 0.9rem 1rem;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
+      overflow: hidden;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      text-align: left;
       transition: box-shadow 0.15s, transform 0.15s;
+    }
+
+    .voice-tile:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-3px);
+    }
+
+    .tile-portrait {
+      position: relative;
+      aspect-ratio: 1;
+      background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 85%);
+      overflow: hidden;
+    }
+
+    /* Photos (images/voices/<slug>.jpg) get a uniform duotone treatment —
+       grayscale over the desk-color wash — so portraits from different
+       sources read as one consistent set. Without a photo, the tile shows
+       the voice's shape mark and initials on the navy gradient. */
+    .tile-portrait img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(1) contrast(1.08) brightness(1.02);
+      mix-blend-mode: luminosity;
+      z-index: 2;
+    }
+
+    .tile-accent-wash {
+      position: absolute;
+      inset: 0;
+      background: var(--accent, var(--navy));
+      opacity: 0.28;
+      z-index: 1;
+    }
+
+    .tile-mark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -85%);
+      z-index: 0;
+      opacity: 0.9;
+    }
+
+    .tile-mark svg { width: 34px; height: 34px; display: block; }
+
+    .tile-initials {
+      position: absolute;
+      top: 56%;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 0;
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 1.55rem;
+      color: rgba(255, 255, 255, 0.92);
+      letter-spacing: 0.06em;
+    }
+
+    .tile-body {
+      padding: 0.7rem 0.85rem 0.8rem;
       border-top: 3px solid var(--accent, var(--navy));
     }
 
-    .latest-card:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
+    .tile-name {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1.25;
     }
 
-    .latest-top {
+    .tile-pub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tile-meta {
+      font-size: 0.66rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    /* ── Author view ──────────────────────────────── */
+    .back-btn {
+      border: 1px solid var(--border-light);
+      background: none;
+      color: var(--text-body);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .back-btn:hover { border-color: var(--navy-mid); color: var(--navy); }
+
+    .voice-header {
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      padding: 0.5rem 0 1.4rem;
+      border-bottom: 1px solid var(--cream-dark);
+    }
+
+    .voice-header .tile-portrait {
+      width: 84px;
+      flex-shrink: 0;
+      border-radius: 50%;
+    }
+
+    .voice-header .tile-mark svg { width: 24px; height: 24px; }
+    .voice-header .tile-initials { font-size: 1.05rem; top: 55%; }
+
+    .voice-header-name {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 1.7rem;
+      color: var(--navy);
+      line-height: 1.15;
+    }
+
+    .voice-header-sub {
+      margin-top: 0.3rem;
       display: flex;
       align-items: center;
       gap: 0.55rem;
-    }
-
-    .latest-who { min-width: 0; }
-
-    .latest-name {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-dark);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .latest-pub {
-      font-size: 0.66rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .latest-title {
-      font-family: 'DM Serif Display', Georgia, serif;
-      font-size: 0.95rem;
-      line-height: 1.35;
-      color: var(--navy);
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .latest-time {
-      margin-top: auto;
-      font-size: 0.68rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
 
@@ -644,7 +723,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v2.9</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.0</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -665,13 +744,8 @@
         <button class="desk-chip d-policy" data-desk="Policy &amp; China">Policy &amp; China</button>
         <button class="desk-chip d-culture" data-desk="Culture &amp; Society">Culture &amp; Society</button>
       </div>
-      <div class="filter-group">
-        <span class="filter-label">Voice</span>
-        <select class="filter-select" id="voiceSelect">
-          <option value="all">All voices</option>
-        </select>
-      </div>
-      <div class="filter-group">
+      <button class="back-btn" id="backBtn" style="display:none;">&larr; All voices</button>
+      <div class="filter-group" id="daysGroup" style="display:none;">
         <span class="filter-label">Last</span>
         <input type="text" class="days-input" id="daysInput" value="all" placeholder="all">
         <span class="days-suffix">days</span>
@@ -683,12 +757,12 @@
     <span class="stats-count" id="statsCount">Loading...</span><span class="demo-note" id="demoNote" style="display:none;">Demo content — publish the Voices sheet as CSV and set VOICES_CSV_URL to go live</span>
   </div>
 
-  <div class="latest-section" id="latestSection">
-    <div class="section-label">Latest from each voice</div>
-    <div class="latest-strip" id="latestStrip"></div>
+  <div class="grid-wrap" id="gridWrap">
+    <div class="voice-grid" id="voiceGrid"></div>
   </div>
 
   <div class="river-wrap">
+    <div class="voice-header" id="voiceHeader" style="display:none;"></div>
     <div class="river" id="river"></div>
   </div>
 
@@ -767,19 +841,24 @@
       'Helen Toner':             'diamond',
       'Timothy B. Lee':          'triangle',
       // Culture & Society
-      'L.M. Sacasas':            'circle',
-      'Erik Hoel':               'circle-o',
       'Brian Merchant':          'diamond',
-      'Tressie McMillan Cottom': 'diamond-o',
       'Yuval Noah Harari':       'triangle',
       'Ted Chiang':              'triangle-o',
     };
 
+    // Retired from the roster — old rows may linger in the sheet
+    const REMOVED_VOICES = ['Erik Hoel', 'L.M. Sacasas', 'Tressie McMillan Cottom'];
+
     // ── State ──────────────────────────────────────
+    function voiceFromHash() {
+      const m = location.hash.match(/^#v=(.+)$/);
+      return m ? decodeURIComponent(m[1]) : 'all';
+    }
+
     let allPosts = [];
     let renderedPosts = [];
     let currentDesk = 'all';
-    let currentVoice = 'all';
+    let currentVoice = voiceFromHash(); // '#v=<person>' opens that author directly
     let currentDays = null; // null = all
     let isDemo = false;
     let arxiuUrl = localStorage.getItem('arxiu-webapp-url') || '';
@@ -885,7 +964,7 @@
           minutes: parseInt(row[8], 10) || 0
         });
       }
-      return posts.filter(p => p.title && p.person && !isNaN(p.date.getTime()));
+      return posts.filter(p => p.title && p.person && !isNaN(p.date.getTime()) && !REMOVED_VOICES.includes(p.person));
     }
 
     function parseCSVLine(line) {
@@ -908,30 +987,69 @@
       return result;
     }
 
-    // ── Voice dropdown (built from loaded data) ────
-    function buildVoiceSelect() {
-      const select = document.getElementById('voiceSelect');
-      const byDesk = {};
-      allPosts.forEach(p => {
-        if (!byDesk[p.desk]) byDesk[p.desk] = new Set();
-        byDesk[p.desk].add(p.person);
+    // ── Voice grid (author squares) ────────────────
+    function slugOf(person) {
+      return person.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    function initialsOf(person) {
+      const words = person.split(/\s+/).filter(w => /[a-zA-Z]/.test(w));
+      if (words.length === 0) return '?';
+      const first = words[0].replace(/[^a-zA-Z]/g, '').charAt(0);
+      const last = words.length > 1 ? words[words.length - 1].replace(/[^a-zA-Z]/g, '').charAt(0) : '';
+      return (first + last).toUpperCase();
+    }
+
+    function portraitHtml(person, desk) {
+      const color = deskColorFor(desk);
+      const shape = SHAPES[shapeFor(person)] || SHAPES['circle'];
+      return `
+        <div class="tile-portrait" style="--accent:${color};">
+          <span class="tile-mark" style="color:rgba(255,255,255,0.85);"><svg viewBox="0 0 24 24" aria-hidden="true">${shape}</svg></span>
+          <span class="tile-initials">${escapeHtml(initialsOf(person))}</span>
+          <div class="tile-accent-wash"></div>
+          <img src="images/voices/${slugOf(person)}.jpg" alt="" loading="lazy" onerror="this.remove();">
+        </div>`;
+    }
+
+    function voiceAggregates(posts) {
+      const byVoice = new Map();
+      posts.forEach(p => {
+        let v = byVoice.get(p.person);
+        if (!v) {
+          v = { person: p.person, desk: p.desk, publication: p.kind === 'press' ? 'In the press' : p.publication, count: 0, latest: p.date, hasEssay: p.kind !== 'press' };
+          byVoice.set(p.person, v);
+        }
+        v.count++;
+        if (p.date > v.latest) v.latest = p.date;
+        if (!v.hasEssay && p.kind !== 'press') { v.publication = p.publication; v.hasEssay = true; }
+      });
+      return [...byVoice.values()];
+    }
+
+    function renderGrid() {
+      let posts = allPosts;
+      if (currentDesk !== 'all') posts = posts.filter(p => p.desk === currentDesk);
+
+      const deskOrder = Object.keys(DESK_COLORS);
+      const voices = voiceAggregates(posts).sort((a, b) => {
+        const d = deskOrder.indexOf(a.desk) - deskOrder.indexOf(b.desk);
+        return d !== 0 ? d : b.latest - a.latest;
       });
 
-      let html = '<option value="all">All voices</option>';
-      const deskOrder = Object.keys(DESK_COLORS).concat(
-        Object.keys(byDesk).filter(d => !(d in DESK_COLORS))
-      );
-      deskOrder.forEach(desk => {
-        if (!byDesk[desk]) return;
-        html += `<optgroup label="${escapeHtml(desk)}">`;
-        [...byDesk[desk]].sort().forEach(person => {
-          html += `<option value="${escapeHtml(person)}">${escapeHtml(person)}</option>`;
-        });
-        html += '</optgroup>';
-      });
-      select.innerHTML = html;
-      select.value = currentVoice;
-      if (select.value !== currentVoice) { currentVoice = 'all'; select.value = 'all'; }
+      document.getElementById('voiceGrid').innerHTML = voices.map(v => `
+        <button class="voice-tile" data-person="${escapeHtml(v.person)}" style="--accent:${deskColorFor(v.desk)};" title="Read ${escapeHtml(v.person)}">
+          ${portraitHtml(v.person, v.desk)}
+          <div class="tile-body">
+            <div class="tile-name">${escapeHtml(v.person)}</div>
+            <div class="tile-pub">${escapeHtml(v.publication)}</div>
+            <div class="tile-meta">${v.count} ${v.count === 1 ? 'post' : 'posts'} · ${timeAgo(v.latest)}</div>
+          </div>
+        </button>`).join('');
+
+      document.getElementById('statsCount').textContent =
+        voices.length + (voices.length === 1 ? ' voice' : ' voices') + ' · ' +
+        posts.length + (posts.length === 1 ? ' post' : ' posts');
     }
 
     // ── Rendering ──────────────────────────────────
@@ -939,40 +1057,6 @@
       const color = deskColorFor(desk);
       const shape = SHAPES[shapeFor(person)] || SHAPES['circle'];
       return `<span class="monogram${small ? ' sm' : ''}" style="--accent:${color};--accent-tint:${hexToTint(color, 0.1)};color:${color};" title="${escapeHtml(person)}"><svg viewBox="0 0 24 24" aria-hidden="true">${shape}</svg></span>`;
-    }
-
-    function renderLatestStrip(posts) {
-      const section = document.getElementById('latestSection');
-      const strip = document.getElementById('latestStrip');
-
-      // One card per voice — its most recent post — hidden when a single voice is selected
-      if (currentVoice !== 'all') { section.style.display = 'none'; return; }
-
-      const latest = new Map();
-      posts.forEach(p => {
-        const existing = latest.get(p.person);
-        if (!existing || p.date > existing.date) latest.set(p.person, p);
-      });
-
-      const cards = [...latest.values()].sort((a, b) => b.date - a.date);
-      if (cards.length < 2) { section.style.display = 'none'; return; }
-      section.style.display = '';
-
-      strip.innerHTML = cards.map(p => {
-        const accent = deskColorFor(p.desk);
-        return `
-        <a class="latest-card" style="--accent:${accent};--accent-tint:${hexToTint(accent, 0.1)};" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">
-          <div class="latest-top">
-            ${markHtml(p.person, p.desk, true)}
-            <div class="latest-who">
-              <div class="latest-name">${escapeHtml(p.person)}</div>
-              <div class="latest-pub">${escapeHtml(p.publication)}</div>
-            </div>
-          </div>
-          <div class="latest-title">${escapeHtml(p.title)}</div>
-          <div class="latest-time">${timeAgo(p.date)}</div>
-        </a>`;
-      }).join('');
     }
 
     function renderRiver(posts) {
@@ -1007,58 +1091,72 @@
       }).join('');
     }
 
+    // Two views: the author grid (landing) and one author's posts
     function filterAndRender() {
-      let filtered = allPosts.slice();
+      const inVoice = currentVoice !== 'all';
+      document.getElementById('gridWrap').style.display = inVoice ? 'none' : '';
+      document.getElementById('voiceHeader').style.display = inVoice ? '' : 'none';
+      document.getElementById('backBtn').style.display = inVoice ? '' : 'none';
+      document.getElementById('daysGroup').style.display = inVoice ? '' : 'none';
+      document.querySelector('.desk-chips').style.display = inVoice ? 'none' : '';
 
+      if (!inVoice) {
+        document.getElementById('river').innerHTML = '';
+        renderedPosts = [];
+        renderGrid();
+        return;
+      }
+
+      const all = allPosts.filter(p => p.person === currentVoice);
+      const agg = voiceAggregates(all)[0];
+      const deskColor = agg ? deskColorFor(agg.desk) : '#0C1B2A';
+      document.getElementById('voiceHeader').innerHTML = agg ? `
+        ${portraitHtml(agg.person, agg.desk)}
+        <div>
+          <div class="voice-header-name">${escapeHtml(agg.person)}</div>
+          <div class="voice-header-sub">
+            <span>${escapeHtml(agg.publication)}</span>
+            <span class="desk-pill" style="--desk-color:${deskColor};--desk-tint:${hexToTint(deskColor, 0.1)};">${escapeHtml(agg.desk)}</span>
+            <span>${agg.count} ${agg.count === 1 ? 'post' : 'posts'}</span>
+          </div>
+        </div>` : `<div class="voice-header-name">${escapeHtml(currentVoice)}</div>`;
+
+      let filtered = all;
       if (currentDays !== null) {
         const cutoff = new Date(Date.now() - currentDays * 86400000);
         filtered = filtered.filter(p => p.date >= cutoff);
       }
-      if (currentDesk !== 'all') {
-        filtered = filtered.filter(p => p.desk === currentDesk);
-      }
-
-      // The strip reflects desk+date filters but not the voice filter
-      renderLatestStrip(filtered);
-
-      if (currentVoice !== 'all') {
-        filtered = filtered.filter(p => p.person === currentVoice);
-      }
-
       filtered.sort((a, b) => b.date - a.date);
       renderedPosts = filtered;
       renderRiver(filtered);
 
-      const voiceCount = new Set(filtered.map(p => p.person)).size;
       document.getElementById('statsCount').textContent =
-        filtered.length + (filtered.length === 1 ? ' post' : ' posts') + ' · ' +
-        voiceCount + (voiceCount === 1 ? ' voice' : ' voices');
+        filtered.length + (filtered.length === 1 ? ' post' : ' posts');
     }
 
-    // ── Filter events ──────────────────────────────
-    // Desk and voice filters are mutually exclusive: picking one
-    // resets the other, so you can never land on an empty overlap.
+    // ── Filter & navigation events ─────────────────
     document.querySelectorAll('.desk-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         document.querySelectorAll('.desk-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         currentDesk = chip.dataset.desk;
-        if (currentVoice !== 'all') {
-          currentVoice = 'all';
-          document.getElementById('voiceSelect').value = 'all';
-        }
         filterAndRender();
       });
     });
 
-    document.getElementById('voiceSelect').addEventListener('change', e => {
-      currentVoice = e.target.value;
-      if (currentVoice !== 'all' && currentDesk !== 'all') {
-        currentDesk = 'all';
-        document.querySelectorAll('.desk-chip').forEach(c =>
-          c.classList.toggle('active', c.dataset.desk === 'all'));
-      }
+    // Click a square → that author's posts (via the hash, so browser
+    // back/forward and refresh keep working)
+    document.getElementById('voiceGrid').addEventListener('click', e => {
+      const tile = e.target.closest('.voice-tile');
+      if (tile) location.hash = 'v=' + encodeURIComponent(tile.dataset.person);
+    });
+
+    document.getElementById('backBtn').addEventListener('click', () => { location.hash = ''; });
+
+    window.addEventListener('hashchange', () => {
+      currentVoice = voiceFromHash();
       filterAndRender();
+      window.scrollTo(0, 0);
     });
 
     // ── Arxiu: save a post as PDF to Drive ─────────
@@ -1175,7 +1273,6 @@
 
     function applyCsv(text) {
       allPosts = parseCSV(text);
-      buildVoiceSelect();
       filterAndRender();
     }
 
@@ -1207,7 +1304,7 @@
             </p>
           </div>`;
         document.getElementById('statsCount').textContent = '';
-        document.getElementById('latestSection').style.display = 'none';
+        document.getElementById('gridWrap').style.display = 'none';
       }
     }
 
@@ -1225,7 +1322,6 @@
         { date: d(4),  title: 'Platformer: Inside the AI Companion Reckoning', link: 'https://www.platformer.news', person: 'Casey Newton', publication: 'Platformer', desk: 'Industry & Chips', kind: 'essay', standfirst: 'Regulators are circling the companion apps. What the new state laws actually require, and why the industry saw none of it coming.', minutes: 11 },
         { date: d(5),  title: 'ChinAI #312: Translating the New Beijing AI Measures', link: 'https://chinai.substack.com', person: 'Jeffrey Ding', publication: 'ChinAI', desk: 'Policy & China', kind: 'essay', standfirst: 'A full translation of the draft measures, and what they signal about how China is really thinking about frontier regulation.', minutes: 13 },
         { date: d(6),  title: 'What Verification Regimes Can and Cannot Do', link: 'https://helentoner.substack.com', person: 'Helen Toner', publication: 'Rising Tide', desk: 'Policy & China', kind: 'essay', standfirst: 'Compute verification is having a moment in policy circles. A sober look at the technical assumptions underneath the optimism.', minutes: 10 },
-        { date: d(2),  title: 'The Machine in the Garden, Again', link: 'https://theconvivialsociety.substack.com', person: 'L.M. Sacasas', publication: 'The Convivial Society', desk: 'Culture & Society', kind: 'essay', standfirst: 'On the older question hiding inside the AI debate: what is attention for, and who gets to arrange the furniture of our inner lives?', minutes: 16 },
         { date: d(4),  title: 'Yuval Noah Harari: AI and the Collapse of Shared Reality', link: 'https://www.ft.com', person: 'Yuval Noah Harari', publication: 'Financial Times', desk: 'Culture & Society', kind: 'press', standfirst: 'The historian argues that the deepest risk is not superintelligence but the quiet erosion of the institutions that let strangers trust each other.', minutes: 0 },
         { date: d(7),  title: 'The Luddites Were Right About This One Thing', link: 'https://www.bloodinthemachine.com', person: 'Brian Merchant', publication: 'Blood in the Machine', desk: 'Culture & Society', kind: 'essay', standfirst: 'Two centuries later, the question is identical: not whether the machines work, but who they work for.', minutes: 12 },
         { date: d(8),  title: 'Why I Am Still Not Worried About Superintelligence (But Am Worried About You)', link: 'https://garymarcus.substack.com', person: 'Gary Marcus', publication: 'Marcus on AI', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'The gap between demo and deployment remains the story. On reliability, hype cycles, and what the benchmarks still hide.', minutes: 8 },
@@ -1234,7 +1330,6 @@
         { date: d(11), title: 'Tools for Thought, Tools for Slop', link: 'https://simonwillison.net', person: 'Simon Willison', publication: 'simonwillison.net', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'Notes from six months of coding with agents: what stuck, what broke, and the prompting patterns I keep reaching for.', minutes: 7 },
       ];
       document.getElementById('demoNote').style.display = '';
-      buildVoiceSelect();
       filterAndRender();
     }
 
