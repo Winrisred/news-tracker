@@ -723,7 +723,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.3</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.4</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1009,7 +1009,7 @@
           <span class="tile-mark" style="color:rgba(255,255,255,0.85);"><svg viewBox="0 0 24 24" aria-hidden="true">${shape}</svg></span>
           <span class="tile-initials">${escapeHtml(initialsOf(person))}</span>
           <div class="tile-accent-wash"></div>
-          <img src="images/voices/${slugOf(person)}.jpg" alt="" loading="lazy" onerror="this.remove();">
+          <img src="images/voices/${slugOf(person)}.jpg" alt="" loading="lazy" onerror="if(!this.dataset.alt){this.dataset.alt=1;this.src=this.src.replace(/\.jpg$/,'.png');}else{this.remove();}">
         </div>`;
     }
 
