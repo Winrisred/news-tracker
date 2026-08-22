@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.11 (2026-08)
+// Version: v3.12 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -91,6 +91,8 @@ const VOICES = [
   { person: "Frederike Kaltheuner",   publication: "Frederike Kaltheuner",       desk: DESK_POLICY, type: "rss", url: "https://frederike.substack.com/feed" },
   { person: "EU AI Industrial Policy Monitor", publication: "EU AI Industrial Policy Monitor", desk: DESK_POLICY, type: "rss", url: "https://euaipolicymonitor.substack.com/feed" },
   { person: "AI Now Institute",       publication: "AI Now Institute",           desk: DESK_POLICY, type: "rss", url: "https://ainowinstitute.org/feed" },
+  // datatank.org (Webflow) has no feed; they publish via Medium
+  { person: "The Data Tank",          publication: "The Data Tank",              desk: DESK_POLICY, type: "rss", url: "https://medium.com/feed/@TheDataTank" },
 
   // Culture & Society
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
