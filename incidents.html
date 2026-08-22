@@ -381,6 +381,9 @@
       margin-top: 0.4rem;
     }
 
+    .inc-meta a { color: var(--text-muted); text-decoration: underline; }
+    .inc-meta a:hover { color: var(--src); }
+
     .empty {
       padding: 4rem 1rem;
       text-align: center;
@@ -417,7 +420,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.2</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.3</span></div>
       <h1>AI Incidents</h1>
       <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database</p>
       <div class="header-accent"></div>
@@ -607,16 +610,20 @@
         </article>`;
       }
 
+      // Headline links to the AIID incident record — always reachable,
+      // unlike many cited outlets (US local news often geo-blocks the
+      // EEA, e.g. HTTP 451). The original article is the secondary link.
+      const primary = safeLink(x.citeLink || x.link);
       return `
       <article class="inc-row ${cls}">
         <div class="inc-top">
           <span class="inc-badge">AIID</span>
           <span class="inc-when">${escapeHtml(when)}</span>
-          ${x.citeLink ? `<a class="inc-id" href="${escapeHtml(safeLink(x.citeLink))}" target="_blank" rel="noopener">Incident ${escapeHtml(x.id)} &rarr;</a>` : `<span class="inc-id">${escapeHtml(x.id)}</span>`}
+          ${x.id ? `<span class="inc-id">Incident ${escapeHtml(x.id)}</span>` : ''}
         </div>
-        <h2 class="inc-headline"><a href="${escapeHtml(safeLink(x.link))}" target="_blank" rel="noopener">${escapeHtml(x.headline)}</a></h2>
+        <h2 class="inc-headline"><a href="${escapeHtml(primary)}" target="_blank" rel="noopener">${escapeHtml(x.headline)}</a></h2>
         ${x.snippet ? `<p class="inc-snippet">${escapeHtml(x.snippet)}</p>` : ''}
-        ${x.outlet ? `<div class="inc-meta">via ${escapeHtml(x.outlet)}</div>` : ''}
+        ${x.outlet ? `<div class="inc-meta">original report: <a href="${escapeHtml(safeLink(x.link))}" target="_blank" rel="noopener">${escapeHtml(x.outlet)}</a> &rarr;</div>` : ''}
       </article>`;
     }
 
