@@ -1,15 +1,16 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.0** (2026-08)
+**Current version: v3.1** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
 Automated news aggregator that collects AI and BigTech headlines from RSS feeds and the AISI blog, stores them in Google Sheets, and displays them on a privacy-friendly web dashboard installable as a PWA.
 
-Two pages, one identity:
+Three pages, one identity:
 
 - **Headlines** (`index.html`) — the wire desk: hourly headlines from major outlets, filtered by company/topic keywords.
 - **Voices** (`voices.html`) — the reading room: essays & commentary from a curated roster of 19 AI voices (newsletters, blogs, and press coverage) in four desks: Researchers & Builders, Industry & Chips, Policy & China, Culture & Society. The landing view is a grid of author squares (portrait or styled placeholder, desk-colored); clicking a square opens that voice's posts. No keyword filtering — the roster is curated by author.
+- **Incidents** (`incidents.html`) — the accountability ledger: ~2,250 documented AI incidents from the [AIAAIC Repository](https://www.aiaaic.org/aiaaic-repository) (CC BY-SA 4.0, fetched from its public sheet) plus a live stream of new reports from the [AI Incident Database](https://incidentdatabase.ai) RSS. The two sources stay as parallel streams with distinct visuals (petrol-blue registry rows with taxonomy chips vs sienna report rows with snippets) — never merged or deduplicated across each other. Filters by source, year, sector, and full-text search.
 
 ## Setup
 
@@ -65,19 +66,29 @@ Three ways to archive:
 
 **Page numbers**: Apps Script can't insert page-number fields, so the script copies a template Doc when `ARXIU_TEMPLATE_ID` is set in voices.gs. Create a Google Doc, **Insert → Page numbers** (e.g. bottom right), copy its ID from the URL (`docs.google.com/document/d/<ID>/edit`), paste it into the constant, save, and redeploy (New version). Every PDF then inherits the numbered footer — and the template's margins/page setup, if you customize them. If you add someone, optionally give them an accent color in `VOICE_ACCENTS` in `voices.html` (unknown voices get an auto-generated color).
 
+### 6. Incidents page (third Sheet + script)
+
+1. Create a **third** Google Sheet
+2. **Extensions > Apps Script**, paste `google-apps-script/incidents.gs`, save
+3. Run **setupSheets**, then **fetchIncidents** — the first run backfills ~2,250 AIAAIC records (takes a minute)
+4. Run **createTwelveHourTrigger** (registries update daily-ish)
+5. **File > Share > Publish to web** — sheet: **All Incidents**, format: **CSV** — paste the URL into `INCIDENTS_CSV_URL` in `incidents.html`
+
 ## Structure
 
 ```
 news-tracker/
 ├── google-apps-script/
 │   ├── ai-bigtech-news.gs    <- Headlines Apps Script (paste into Google Sheets)
-│   └── voices.gs             <- Voices Apps Script (paste into a SECOND Sheet)
+│   ├── voices.gs             <- Voices Apps Script (paste into a SECOND Sheet)
+│   └── incidents.gs          <- Incidents Apps Script (paste into a THIRD Sheet)
 ├── images/
 │   ├── aisi/                 <- 120 local nature/forest/sea/plants fallbacks (AISI)
 │   ├── general/              <- 180 local abstract/sky/landscape fallbacks (RSS)
 │   └── favicon-*.png         <- Favicons and PWA icons
 ├── index.html                <- Headlines dashboard
 ├── voices.html               <- Voices reading room
+├── incidents.html            <- Incidents ledger
 ├── manifest.json             <- PWA manifest
 ├── sw.js                     <- Service worker (offline support)
 └── README.md
@@ -132,6 +143,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.1** (2026-08) — New **Incidents** page (`incidents.html` + `incidents.gs`): an accountability ledger of ~2,250 AIAAIC records (CC BY-SA 4.0) plus live AIID reports, as visually distinct parallel streams; filters by source/year/sector and the site's first full-text search. Third nav tab on all pages.
 - **v3.0** (2026-08) — Voices redesigned as an **author grid**: squares with portraits (auto duotone via `images/voices/<slug>.jpg`) or shape-mark placeholders; clicking a square opens that voice's posts (hash-addressable, browser back works). Roster trimmed to 19 (retired Erik Hoel, L.M. Sacasas, Tressie McMillan Cottom; `removeRetiredVoices()` purges their rows). Voice dropdown and latest-strip retired with it.
 - **v2.9** (2026-08) — Instant page switching: both pages cache the downloaded CSV in localStorage and render from it immediately; the network is consulted only when the copy is over 10 minutes old, with quiet background updates (skipped mid-scroll so the page never jumps). Stale data also stands in when the network fails.
 - **v2.8** (2026-08) — Bookmarklet author detection via JSON-LD structured data (fixes "Unknown" on sites like Yahoo where the byline isn't in meta tags); publication from og:site_name; success alert echoes the captured author/year. Client-side only — re-drag the bookmarklet, no redeploy.

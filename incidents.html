@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Incidents — Accountability Ledger</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0C1B2A">
+  <!-- Content-Security-Policy: same defense-in-depth as index.html -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://gc.zgo.at; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://docs.google.com https://*.googleusercontent.com https://script.google.com https://winrisred.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none';">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="images/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+  <style>
+    /* ── Self-hosted fonts (privacy: no IP leak to Google) ── */
+    @font-face {
+      font-family: 'DM Sans';
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+      src: url('fonts/dm-sans-latin.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Sans';
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+      src: url('fonts/dm-sans-latin-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('fonts/dm-serif-display-latin.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('fonts/dm-serif-display-latin-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+    /* ── Reset & Base ─────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --navy: #0C1B2A;
+      --navy-light: #142840;
+      --navy-mid: #1A3352;
+      --red: #E63946;
+      --red-dark: #C5303C;
+      --cream: #F8F6F2;
+      --cream-dark: #EDE9E3;
+      --white: #FFFFFF;
+      --text-dark: #1A1A2E;
+      --text-body: #3D3D56;
+      --text-muted: #7A7A8E;
+      --border-light: #E2DED8;
+      --radius: 8px;
+      --shadow-sm: 0 1px 3px rgba(12, 27, 42, 0.06);
+      --shadow-md: 0 4px 16px rgba(12, 27, 42, 0.08);
+
+      /* Source identities — deliberately distinct */
+      --src-aiaaic: #1F6F8B;   /* petrol blue — the curated registry */
+      --src-aiid: #C1502E;     /* burnt sienna — the report ticker */
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--text-body);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────────── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 3rem 2rem 2.5rem;
+    }
+
+    .header-inner { max-width: 1400px; margin: 0 auto; }
+
+    .header-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--red);
+      margin-bottom: 0.5rem;
+    }
+
+    .header-version {
+      text-transform: none;
+      font-weight: 500;
+      font-size: 0.62rem;
+      opacity: 0.75;
+      margin-left: 0.35rem;
+      letter-spacing: 0.1em;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 2.6rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--white);
+    }
+
+    .header-subtitle {
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 0.6rem;
+      max-width: 560px;
+    }
+
+    .header-accent {
+      width: 48px;
+      height: 3px;
+      background: var(--red);
+      margin-top: 1.5rem;
+      border-radius: 2px;
+    }
+
+    .site-nav { display: flex; gap: 0.6rem; margin-top: 1.75rem; }
+
+    .site-tab {
+      padding: 0.42rem 1.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: all 0.15s;
+    }
+
+    .site-tab:hover { border-color: rgba(255, 255, 255, 0.6); color: var(--white); }
+    .site-tab.active { background: var(--red); border-color: var(--red); color: var(--white); }
+
+    /* ── Filters ──────────────────────────────────── */
+    .filters {
+      background: var(--white);
+      border-bottom: 1px solid var(--border-light);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filters-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.85rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .filter-group { display: flex; align-items: center; gap: 0.5rem; }
+
+    .src-chips { display: flex; align-items: center; gap: 0.4rem; }
+
+    .src-chip {
+      border: 1px solid var(--border-light);
+      background: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 0.32rem 0.85rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .src-chip:hover { border-color: var(--navy-mid); color: var(--navy); }
+    .src-chip.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
+    .src-chip.c-aiaaic.active { background: var(--src-aiaaic); border-color: var(--src-aiaaic); }
+    .src-chip.c-aiid.active { background: var(--src-aiid); border-color: var(--src-aiid); }
+
+    .filter-select {
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--text-body);
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 0.38rem 0.6rem;
+      cursor: pointer;
+      max-width: 220px;
+    }
+
+    .filter-select:focus, .search-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
+    }
+
+    .search-input {
+      border: 1px solid var(--border-light);
+      border-radius: 999px;
+      padding: 0.38rem 0.9rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      color: var(--text-body);
+      width: 220px;
+    }
+
+    /* ── Stats & attribution ──────────────────────── */
+    .stats-bar {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 2rem 0;
+    }
+
+    .stats-count {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .attribution {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+    .attribution a { color: var(--text-muted); text-decoration: underline; }
+    .attribution a:hover { color: var(--navy); }
+
+    .demo-note {
+      display: inline-block;
+      margin-left: 0.75rem;
+      font-size: 0.7rem;
+      color: var(--red-dark);
+      font-weight: 500;
+    }
+
+    /* ── The Ledger ───────────────────────────────── */
+    .ledger-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.25rem 2rem 4rem;
+    }
+
+    .ledger { max-width: 900px; }
+
+    .inc-row {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-left: 4px solid var(--src, var(--navy));
+      border-radius: var(--radius);
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .inc-row.src-aiaaic { --src: var(--src-aiaaic); background: rgba(31, 111, 139, 0.03); }
+    .inc-row.src-aiid   { --src: var(--src-aiid);   background: rgba(193, 80, 46, 0.035); }
+
+    .inc-top {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+    }
+
+    .inc-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #fff;
+      background: var(--src);
+      padding: 0.16rem 0.55rem;
+      border-radius: 4px;
+    }
+
+    .inc-when {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--src);
+    }
+
+    .inc-id {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    a.inc-id:hover { color: var(--src); text-decoration: underline; }
+
+    .inc-headline {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 1.12rem;
+      font-weight: 400;
+      line-height: 1.3;
+    }
+
+    .inc-headline a { color: var(--navy); text-decoration: none; }
+    .inc-headline a:hover { color: var(--src); text-decoration: underline; text-underline-offset: 3px; }
+
+    /* AIAAIC anatomy: actors + taxonomy chips + harms */
+    .inc-actors {
+      font-size: 0.78rem;
+      color: var(--text-body);
+      margin-top: 0.3rem;
+    }
+
+    .inc-actors .arrow { color: var(--src); font-weight: 700; padding: 0 0.15rem; }
+
+    .inc-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+    }
+
+    .inc-chip {
+      font-size: 0.64rem;
+      font-weight: 600;
+      color: var(--src);
+      background: none;
+      border: 1px solid color-mix(in srgb, var(--src) 35%, transparent);
+      padding: 0.12rem 0.5rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .inc-harms {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.45rem;
+    }
+
+    .inc-harms strong { color: var(--text-body); font-weight: 600; }
+
+    /* AIID anatomy: snippet + outlet */
+    .inc-snippet {
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: var(--text-body);
+      margin-top: 0.3rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 720px;
+    }
+
+    .inc-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    .empty {
+      padding: 4rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── Footer ───────────────────────────────────── */
+    footer {
+      background: var(--navy);
+      color: rgba(255, 255, 255, 0.4);
+      text-align: center;
+      padding: 2.5rem 2rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.02em;
+    }
+
+    footer strong { color: rgba(255, 255, 255, 0.7); }
+    footer a { color: rgba(255, 255, 255, 0.55); }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 640px) {
+      header { padding: 2.25rem 1.25rem 2rem; }
+      h1 { font-size: 2rem; }
+      .filters-inner { padding: 0.75rem 1.25rem; gap: 0.75rem; }
+      .stats-bar { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .ledger-wrap { padding: 1rem 1.25rem 3rem; }
+      .search-input { width: 100%; }
+      .inc-headline { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.1</span></div>
+      <h1>AI Incidents</h1>
+      <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database</p>
+      <div class="header-accent"></div>
+      <nav class="site-nav">
+        <a class="site-tab" href="index.html">Headlines</a>
+        <a class="site-tab" href="voices.html">Voices</a>
+        <a class="site-tab active" href="incidents.html">Incidents</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="filters">
+    <div class="filters-inner">
+      <div class="src-chips">
+        <span class="filter-label">Source</span>
+        <button class="src-chip active" data-src="all">All</button>
+        <button class="src-chip c-aiaaic" data-src="AIAAIC">AIAAIC</button>
+        <button class="src-chip c-aiid" data-src="AIID">AIID</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Year</span>
+        <select class="filter-select" id="yearSelect"><option value="all">All</option></select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Sector</span>
+        <select class="filter-select" id="sectorSelect"><option value="all">All</option></select>
+      </div>
+      <div class="filter-group">
+        <input type="search" class="search-input" id="searchInput" placeholder="Search incidents…">
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <span class="stats-count" id="statsCount">Loading...</span><span class="demo-note" id="demoNote" style="display:none;">Demo content — publish the Incidents sheet as CSV and set INCIDENTS_CSV_URL to go live</span>
+    <div class="attribution">Data: <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) · <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a></div>
+  </div>
+
+  <div class="ledger-wrap">
+    <div class="ledger" id="ledger"></div>
+  </div>
+
+  <footer>
+    <strong>AI Incidents</strong> — Records from the <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) and the <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a>, collected via Google Sheets
+  </footer>
+
+  <script>
+    // ── Configuration ──────────────────────────────
+    // Publish the Incidents Google Sheet ("All Incidents" tab) as CSV and paste the URL here
+    const INCIDENTS_CSV_URL = 'YOUR_INCIDENTS_SHEET_CSV_URL_HERE';
+
+    // ── State ──────────────────────────────────────
+    let allIncidents = [];
+    let currentSrc = 'all';
+    let currentYear = 'all';
+    let currentSector = 'all';
+    let currentQuery = '';
+    let isDemo = false;
+
+    // ── Utilities ──────────────────────────────────
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function safeLink(url) {
+      const u = String(url || '').trim();
+      return (u.startsWith('https://') || u.startsWith('http://')) ? u : '#';
+    }
+
+    function decodeEntities(s) {
+      return String(s == null ? '' : s)
+        .replace(/&#(\d+);/g, (m, n) => { try { return String.fromCodePoint(parseInt(n, 10)); } catch (e) { return m; } })
+        .replace(/&#x([0-9a-f]+);/gi, (m, n) => { try { return String.fromCodePoint(parseInt(n, 16)); } catch (e) { return m; } })
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ');
+    }
+
+    // ── Date & CSV parsing (same conventions as the other pages) ──
+    function parseDate(str) {
+      if (!str) return new Date(NaN);
+      const parts = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (parts) return new Date(parseInt(parts[3]), parseInt(parts[2]) - 1, parseInt(parts[1]));
+      return new Date(str);
+    }
+
+    function parseCSV(text) {
+      const lines = text.split('\n');
+      if (lines.length < 2) return [];
+      const items = [];
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCSVLine(lines[i]);
+        if (row.length < 8) continue;
+        items.push({
+          date: parseDate(row[0]),
+          source: row[1],
+          id: row[2] || '',
+          headline: decodeEntities(row[3]),
+          link: row[4] || '',
+          citeLink: row[5] || '',
+          outlet: row[6] || '',
+          deployer: row[7] || '',
+          developer: row[8] || '',
+          system: row[9] || '',
+          technology: row[10] || '',
+          jurisdiction: row[11] || '',
+          sector: row[12] || '',
+          harms: row[13] || '',
+          snippet: decodeEntities(row[14] || '')
+        });
+      }
+      return items.filter(x => x.headline && x.source && !isNaN(x.date.getTime()));
+    }
+
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+          else inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    // ── Filter options (built from data) ───────────
+    function buildFilterOptions() {
+      const years = new Set(), sectors = new Set();
+      allIncidents.forEach(x => {
+        years.add(String(x.date.getFullYear()));
+        String(x.sector).split(';').forEach(s => { s = s.trim(); if (s) sectors.add(s); });
+      });
+
+      const ySel = document.getElementById('yearSelect');
+      ySel.innerHTML = '<option value="all">All</option>' +
+        [...years].sort().reverse().map(y => `<option value="${y}">${y}</option>`).join('');
+      ySel.value = currentYear;
+      if (ySel.value !== currentYear) { currentYear = 'all'; ySel.value = 'all'; }
+
+      const sSel = document.getElementById('sectorSelect');
+      sSel.innerHTML = '<option value="all">All</option>' +
+        [...sectors].sort().map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+      sSel.value = currentSector;
+      if (sSel.value !== currentSector) { currentSector = 'all'; sSel.value = 'all'; }
+    }
+
+    // ── Rendering — two distinct row anatomies ─────
+    function rowHtml(x) {
+      const isAiaaic = x.source === 'AIAAIC';
+      const cls = isAiaaic ? 'src-aiaaic' : 'src-aiid';
+      const when = isAiaaic
+        ? String(x.date.getFullYear())
+        : x.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      if (isAiaaic) {
+        const chips = [x.system, x.technology, x.jurisdiction, x.sector]
+          .map(v => String(v || '').trim()).filter(Boolean)
+          .map(v => `<span class="inc-chip">${escapeHtml(v)}</span>`).join('');
+        const actors = [x.deployer, x.developer].map(v => String(v || '').trim()).filter(Boolean);
+        return `
+        <article class="inc-row ${cls}">
+          <div class="inc-top">
+            <span class="inc-badge">AIAAIC</span>
+            <span class="inc-when">${escapeHtml(when)}</span>
+            <span class="inc-id">${escapeHtml(x.id)}</span>
+          </div>
+          <h2 class="inc-headline"><a href="${escapeHtml(safeLink(x.link))}" target="_blank" rel="noopener">${escapeHtml(x.headline)}</a></h2>
+          ${actors.length ? `<div class="inc-actors">${actors.map(escapeHtml).join(' <span class="arrow">&rarr;</span> ')}</div>` : ''}
+          ${chips ? `<div class="inc-chips">${chips}</div>` : ''}
+          ${x.harms ? `<div class="inc-harms"><strong>Harms:</strong> ${escapeHtml(x.harms)}</div>` : ''}
+        </article>`;
+      }
+
+      return `
+      <article class="inc-row ${cls}">
+        <div class="inc-top">
+          <span class="inc-badge">AIID</span>
+          <span class="inc-when">${escapeHtml(when)}</span>
+          ${x.citeLink ? `<a class="inc-id" href="${escapeHtml(safeLink(x.citeLink))}" target="_blank" rel="noopener">Incident ${escapeHtml(x.id)} &rarr;</a>` : `<span class="inc-id">${escapeHtml(x.id)}</span>`}
+        </div>
+        <h2 class="inc-headline"><a href="${escapeHtml(safeLink(x.link))}" target="_blank" rel="noopener">${escapeHtml(x.headline)}</a></h2>
+        ${x.snippet ? `<p class="inc-snippet">${escapeHtml(x.snippet)}</p>` : ''}
+        ${x.outlet ? `<div class="inc-meta">via ${escapeHtml(x.outlet)}</div>` : ''}
+      </article>`;
+    }
+
+    function filterAndRender() {
+      let filtered = allIncidents;
+
+      if (currentSrc !== 'all') filtered = filtered.filter(x => x.source === currentSrc);
+      if (currentYear !== 'all') filtered = filtered.filter(x => String(x.date.getFullYear()) === currentYear);
+      if (currentSector !== 'all') filtered = filtered.filter(x => String(x.sector).includes(currentSector));
+      if (currentQuery) {
+        const q = currentQuery.toLowerCase();
+        filtered = filtered.filter(x =>
+          (x.headline + ' ' + x.deployer + ' ' + x.developer + ' ' + x.system + ' ' +
+           x.technology + ' ' + x.jurisdiction + ' ' + x.sector + ' ' + x.harms + ' ' + x.snippet)
+            .toLowerCase().includes(q));
+      }
+
+      filtered = filtered.slice().sort((a, b) => (b.date - a.date) || String(b.id).localeCompare(String(a.id)));
+
+      const ledger = document.getElementById('ledger');
+      ledger.innerHTML = filtered.length
+        ? filtered.map(rowHtml).join('')
+        : '<div class="empty">No incidents match these filters.</div>';
+
+      const nA = filtered.filter(x => x.source === 'AIAAIC').length;
+      const nB = filtered.length - nA;
+      document.getElementById('statsCount').textContent =
+        filtered.length + (filtered.length === 1 ? ' incident' : ' incidents') +
+        ' · ' + nA + ' AIAAIC · ' + nB + ' AIID';
+    }
+
+    // ── Filter events ──────────────────────────────
+    document.querySelectorAll('.src-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.src-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentSrc = chip.dataset.src;
+        filterAndRender();
+      });
+    });
+
+    document.getElementById('yearSelect').addEventListener('change', e => {
+      currentYear = e.target.value;
+      filterAndRender();
+    });
+
+    document.getElementById('sectorSelect').addEventListener('change', e => {
+      currentSector = e.target.value;
+      filterAndRender();
+    });
+
+    let searchTimer = null;
+    document.getElementById('searchInput').addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        currentQuery = e.target.value.trim();
+        filterAndRender();
+      }, 150);
+    });
+
+    // ── Load Data (stale-while-revalidate) ─────────
+    const DATA_CACHE_KEY = 'incidents-csv-cache-v1';
+    const DATA_FRESH_MS = 10 * 60 * 1000;
+
+    function applyCsv(text) {
+      allIncidents = parseCSV(text);
+      buildFilterOptions();
+      filterAndRender();
+    }
+
+    async function loadData() {
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null'); } catch (e) {}
+
+      if (cached && cached.csv) {
+        applyCsv(cached.csv);
+        if (Date.now() - cached.at < DATA_FRESH_MS) return;
+      }
+
+      try {
+        const response = await fetch(INCIDENTS_CSV_URL);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const text = await response.text();
+        try { localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({ at: Date.now(), csv: text })); } catch (e) {}
+        if (cached && cached.csv === text) return;
+        if (cached && window.scrollY > 200) return;
+        applyCsv(text);
+      } catch (e) {
+        if (cached && cached.csv) return;
+        document.getElementById('ledger').innerHTML = `
+          <div class="empty">
+            <p>Could not load the incidents data.</p>
+            <p style="margin-top:0.5rem;font-size:0.8rem;color:#7A7A8E;">
+              Make sure the Incidents Google Sheet is published to the web.<br>
+              Error: ${escapeHtml(e.message)}
+            </p>
+          </div>`;
+        document.getElementById('statsCount').textContent = '';
+      }
+    }
+
+    // ── Demo Mode ──────────────────────────────────
+    function loadDemo() {
+      isDemo = true;
+      const d = n => new Date(Date.now() - n * 86400000);
+      allIncidents = [
+        { date: d(1), source: 'AIID', id: '#1379', headline: 'Battery or fake charges? Woman seeks new law to prevent arrests based on AI evidence', link: 'https://incidentdatabase.ai', citeLink: 'https://incidentdatabase.ai/cite/1379', outlet: 'naplespress.com', deployer: '', developer: '', system: '', technology: '', jurisdiction: '', sector: '', harms: '', snippet: 'A Florida woman spent two nights in jail after being arrested twice on charges her lawyers say rested on AI-generated evidence later shown to be fabricated.' },
+        { date: new Date(2026, 0, 1), source: 'AIAAIC', id: 'AIAAIC2270', headline: 'AI agent pressures real person into approving malicious code', link: 'https://www.aiaaic.org/aiaaic-repository', citeLink: '', outlet: '', deployer: 'UK AI Security Institute', developer: 'Frontier lab', system: 'Agentic system', technology: 'Agentic AI', jurisdiction: 'UK', sector: 'Technology', harms: 'Deception/manipulation; Operational disruption', snippet: '' },
+        { date: d(3), source: 'AIID', id: '#1377', headline: 'Chatbot companion implicated in teenager self-harm case', link: 'https://incidentdatabase.ai', citeLink: 'https://incidentdatabase.ai/cite/1377', outlet: 'reuters.com', deployer: '', developer: '', system: '', technology: '', jurisdiction: '', sector: '', harms: '', snippet: 'Regulators opened an inquiry into a companion chatbot after a family alleged the system encouraged harmful behavior over several months of use.' },
+        { date: new Date(2025, 0, 1), source: 'AIAAIC', id: 'AIAAIC2101', headline: 'Facial recognition misidentification leads to wrongful arrest', link: 'https://www.aiaaic.org/aiaaic-repository', citeLink: '', outlet: '', deployer: 'Metropolitan police department', developer: 'Vendor', system: 'Face matching system', technology: 'Facial recognition', jurisdiction: 'USA', sector: 'Govt - police', harms: 'Dignity loss; Institutional trust loss', snippet: '' },
+        { date: new Date(2024, 0, 1), source: 'AIAAIC', id: 'AIAAIC1850', headline: 'Deepfake robocalls impersonate presidential candidate before primary', link: 'https://www.aiaaic.org/aiaaic-repository', citeLink: '', outlet: '', deployer: 'Political consultancy', developer: 'Voice AI vendor', system: 'Voice cloning system', technology: 'Deepfake - audio', jurisdiction: 'USA', sector: 'Politics', harms: 'Mis/disinformation; Electoral interference', snippet: '' },
+      ];
+      document.getElementById('demoNote').style.display = '';
+      buildFilterOptions();
+      filterAndRender();
+    }
+
+    // ── Init ───────────────────────────────────────
+    if (INCIDENTS_CSV_URL === 'YOUR_INCIDENTS_SHEET_CSV_URL_HERE') {
+      loadDemo();
+    } else {
+      loadData();
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
+  <!-- GoatCounter analytics -->
+  <script data-goatcounter="https://winrisred.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
