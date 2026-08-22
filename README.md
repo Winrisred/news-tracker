@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.1** (2026-08)
+**Current version: v3.2** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -143,6 +143,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.2** (2026-08) — Incidents page live (CSV wired). Undated AIAAIC records handled honestly: blank date in the sheet, "Undated" on the page, sorted last (`repairUndatedAiaaic()` fixes rows from the first backfill).
 - **v3.1** (2026-08) — New **Incidents** page (`incidents.html` + `incidents.gs`): an accountability ledger of ~2,250 AIAAIC records (CC BY-SA 4.0) plus live AIID reports, as visually distinct parallel streams; filters by source/year/sector and the site's first full-text search. Third nav tab on all pages.
 - **v3.0** (2026-08) — Voices redesigned as an **author grid**: squares with portraits (auto duotone via `images/voices/<slug>.jpg`) or shape-mark placeholders; clicking a square opens that voice's posts (hash-addressable, browser back works). Roster trimmed to 19 (retired Erik Hoel, L.M. Sacasas, Tressie McMillan Cottom; `removeRetiredVoices()` purges their rows). Voice dropdown and latest-strip retired with it.
 - **v2.9** (2026-08) — Instant page switching: both pages cache the downloaded CSV in localStorage and render from it immediately; the network is consulted only when the copy is over 10 minutes old, with quiet background updates (skipped mid-scroll so the page never jumps). Stale data also stands in when the network fails.

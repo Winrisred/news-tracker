@@ -1,6 +1,6 @@
 // ============================================================
 // AI Incidents Tracker — Google Apps Script
-// Version: v3.1 (2026-08)
+// Version: v3.2 (2026-08)
 //
 // Collects AI incident records from two public registries and
 // stores them in Google Sheets for the incidents.html ledger:
@@ -28,7 +28,7 @@
 //      paste the URL into INCIDENTS_CSV_URL in incidents.html
 // ============================================================
 
-const SCRIPT_VERSION = "v3.1";
+const SCRIPT_VERSION = "v3.2";
 
 const MASTER_SHEET = "All Incidents";
 const SUMMARY_SHEET = "Summary";
@@ -79,7 +79,9 @@ function fetchIncidents() {
     return;
   }
 
-  newItems.sort(function(a, b) { return b.date - a.date; });
+  newItems.sort(function(a, b) {
+    return (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0);
+  });
   writeIncidents_(master, newItems);
   updateSummary_(ss, master);
   trimSheet_(master, MAX_ROWS);
@@ -119,6 +121,9 @@ function fetchAiaaic_() {
     var headline = cleanText_(r[1]);
     if (!headline) continue;
 
+    // ~170 registry rows have no "Occurred" year — store them undated
+    // (blank date cell) rather than faking a date; the page shows
+    // "Undated" and sorts them last.
     var yr = parseInt(String(r[2] || "").trim().substring(0, 4), 10);
     var harms = [r[12], r[13], r[14]]
       .map(function(x) { return String(x || "").trim().replace(/;\s*$/, ""); })
@@ -127,7 +132,7 @@ function fetchAiaaic_() {
     if (link.indexOf("http") !== 0) link = AIAAIC_FALLBACK_LINK;
 
     items.push({
-      date: isNaN(yr) ? new Date() : new Date(yr, 0, 1),
+      date: isNaN(yr) ? "" : new Date(yr, 0, 1),
       source: "AIAAIC",
       id: String(r[0]).trim(),
       headline: headline,
@@ -452,6 +457,40 @@ function reformatAllSheets() {
   SpreadsheetApp.getUi().alert("All sheets reformatted.");
 }
 
+// One-time repair: the first backfill stamped AIAAIC rows that have no
+// "Occurred" year with the fetch date. Re-fetches the registry, finds
+// which IDs are genuinely undated, and blanks their Date cells.
+function repairUndatedAiaaic() {
+  var undated = {};
+  var rows = Utilities.parseCsv(UrlFetchApp.fetch(AIAAIC_CSV_URL, {
+    muteHttpExceptions: true, followRedirects: true,
+    headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
+  }).getContentText());
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r || !r[0] || !/^AIAAIC\d+/i.test(String(r[0]).trim())) continue;
+    var yr = parseInt(String(r[2] || "").trim().substring(0, 4), 10);
+    if (isNaN(yr)) undated[String(r[0]).trim()] = true;
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var master = ss.getSheetByName(MASTER_SHEET);
+  if (!master || master.getLastRow() <= 1) return;
+
+  var lastRow = master.getLastRow();
+  var ids = master.getRange(2, 3, lastRow - 1, 1).getValues();
+  var fixed = 0;
+  for (var j = 0; j < ids.length; j++) {
+    if (undated[String(ids[j][0]).trim()]) {
+      master.getRange(j + 2, 1).setValue("");
+      fixed++;
+    }
+  }
+  autoFormatSheets_(ss);
+  updateSummary_(ss, master);
+  SpreadsheetApp.getUi().alert("Repaired " + fixed + " undated AIAAIC rows (dates blanked; they now sort last).");
+}
+
 // Fetch both sources and log counts without writing — debugging aid
 function testSources() {
   var a = [], b = [];
@@ -483,6 +522,7 @@ function onOpen() {
     .addSeparator()
     .addItem("Update summary", "updateSummaryManual")
     .addItem("Reformat all sheets", "reformatAllSheets")
+    .addItem("Repair undated rows", "repairUndatedAiaaic")
     .addItem("Test sources (debug)", "testSources")
     .addToUi();
 }

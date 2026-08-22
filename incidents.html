@@ -417,7 +417,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.1</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.2</span></div>
       <h1>AI Incidents</h1>
       <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database</p>
       <div class="header-accent"></div>
@@ -467,7 +467,7 @@
   <script>
     // ── Configuration ──────────────────────────────
     // Publish the Incidents Google Sheet ("All Incidents" tab) as CSV and paste the URL here
-    const INCIDENTS_CSV_URL = 'YOUR_INCIDENTS_SHEET_CSV_URL_HERE';
+    const INCIDENTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5XYBuID-3UdMrqmzcQB2wYByo4gy0oOYMq2_OFuXmzljeRsBQ0cuzNyhWUEPTcaX7G88EJuxZoc6Y/pub?gid=1834243113&single=true&output=csv';
 
     // ── State ──────────────────────────────────────
     let allIncidents = [];
@@ -533,7 +533,9 @@
           snippet: decodeEntities(row[14] || '')
         });
       }
-      return items.filter(x => x.headline && x.source && !isNaN(x.date.getTime()));
+      // Keep rows with no date — some AIAAIC records are genuinely
+      // undated; they display as "Undated" and sort last.
+      return items.filter(x => x.headline && x.source);
     }
 
     function parseCSVLine(line) {
@@ -560,7 +562,7 @@
     function buildFilterOptions() {
       const years = new Set(), sectors = new Set();
       allIncidents.forEach(x => {
-        years.add(String(x.date.getFullYear()));
+        if (!isNaN(x.date.getTime())) years.add(String(x.date.getFullYear()));
         String(x.sector).split(';').forEach(s => { s = s.trim(); if (s) sectors.add(s); });
       });
 
@@ -581,9 +583,10 @@
     function rowHtml(x) {
       const isAiaaic = x.source === 'AIAAIC';
       const cls = isAiaaic ? 'src-aiaaic' : 'src-aiid';
+      const undated = isNaN(x.date.getTime());
       const when = isAiaaic
-        ? String(x.date.getFullYear())
-        : x.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        ? (undated ? 'Undated' : String(x.date.getFullYear()))
+        : (undated ? '' : x.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }));
 
       if (isAiaaic) {
         const chips = [x.system, x.technology, x.jurisdiction, x.sector]
@@ -631,7 +634,11 @@
             .toLowerCase().includes(q));
       }
 
-      filtered = filtered.slice().sort((a, b) => (b.date - a.date) || String(b.id).localeCompare(String(a.id)));
+      filtered = filtered.slice().sort((a, b) => {
+        const at = isNaN(a.date.getTime()) ? -Infinity : a.date.getTime();
+        const bt = isNaN(b.date.getTime()) ? -Infinity : b.date.getTime();
+        return (bt - at) || String(b.id).localeCompare(String(a.id));
+      });
 
       const ledger = document.getElementById('ledger');
       ledger.innerHTML = filtered.length
