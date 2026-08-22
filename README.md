@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.6** (2026-08)
+**Current version: v3.7** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -143,6 +143,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.7** (2026-08) — Search boxes on Headlines (headline/tags/source/author, combines with existing filters) and Voices (full-text over essays; results river replaces the grid while a query is active). All three pages now searchable.
 - **v3.6** (2026-08) — Four voices added: Melanie Mitchell (AI: A Guide for Thinking Humans) and Fei-Fei Li to Researchers & Builders; Jasmine Sun (jasmi.news) and Shoshana Zuboff to Culture & Society — with sketch portraits and two new marks (star/star-o). Roster: 23.
 - **v3.5** (2026-08) — AIID stream rebuilt as one row per **incident**: the RSS (one item per report, dated by ingestion) now only discovers incident numbers; each incident's real date, canonical title, and description come from the site's page-data JSON. Fixes duplicate rows and wrong dates (`rebuildAiidRows()` migrates existing rows).
 - **v3.4** (2026-08) — Voice portraits live: 18 sketch illustrations in images/voices/ (originals + web-optimized 480px JPEGs, ~50KB each; the page tries `.jpg` then `.png` then the placeholder). Files renamed to the canonical slugs.

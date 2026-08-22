@@ -259,6 +259,22 @@
       box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
     }
 
+    .search-input {
+      border: 1px solid var(--border-light);
+      border-radius: 999px;
+      padding: 0.38rem 0.9rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      color: var(--text-body);
+      width: 200px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
+    }
+
     .days-suffix { font-size: 0.74rem; color: var(--text-muted); }
 
     /* ── Stats bar ────────────────────────────────── */
@@ -723,7 +739,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.6</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.7</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -746,6 +762,9 @@
         <button class="desk-chip d-culture" data-desk="Culture &amp; Society">Culture &amp; Society</button>
       </div>
       <button class="back-btn" id="backBtn" style="display:none;">&larr; All voices</button>
+      <div class="filter-group">
+        <input type="search" class="search-input" id="searchInput" placeholder="Search essays…">
+      </div>
       <div class="filter-group" id="daysGroup" style="display:none;">
         <span class="filter-label">Last</span>
         <input type="text" class="days-input" id="daysInput" value="all" placeholder="all">
@@ -867,6 +886,7 @@
     let currentDesk = 'all';
     let currentVoice = voiceFromHash(); // '#v=<person>' opens that author directly
     let currentDays = null; // null = all
+    let currentQuery = '';
     let isDemo = false;
     let arxiuUrl = localStorage.getItem('arxiu-webapp-url') || '';
 
@@ -1098,8 +1118,35 @@
       }).join('');
     }
 
-    // Two views: the author grid (landing) and one author's posts
+    // A live search query overrides both views with a results river
+    function renderSearchView() {
+      document.getElementById('gridWrap').style.display = 'none';
+      document.getElementById('voiceHeader').style.display = 'none';
+      document.getElementById('backBtn').style.display = 'none';
+      document.getElementById('daysGroup').style.display = '';
+      document.querySelector('.desk-chips').style.display = '';
+
+      const q = currentQuery.toLowerCase();
+      let filtered = allPosts.filter(p =>
+        (p.title + ' ' + p.standfirst + ' ' + p.person + ' ' + p.publication)
+          .toLowerCase().includes(q));
+      if (currentDesk !== 'all') filtered = filtered.filter(p => p.desk === currentDesk);
+      if (currentDays !== null) {
+        const cutoff = new Date(Date.now() - currentDays * 86400000);
+        filtered = filtered.filter(p => p.date >= cutoff);
+      }
+      filtered.sort((a, b) => b.date - a.date);
+      renderedPosts = filtered;
+      renderRiver(filtered);
+
+      document.getElementById('statsCount').textContent =
+        filtered.length + (filtered.length === 1 ? ' post matches ' : ' posts match ') +
+        '“' + currentQuery + '”';
+    }
+
+    // Three views: search results, the author grid (landing), one author's posts
     function filterAndRender() {
+      if (currentQuery) { renderSearchView(); return; }
       const inVoice = currentVoice !== 'all';
       document.getElementById('gridWrap').style.display = inVoice ? 'none' : '';
       document.getElementById('voiceHeader').style.display = inVoice ? '' : 'none';
@@ -1159,6 +1206,15 @@
     });
 
     document.getElementById('backBtn').addEventListener('click', () => { location.hash = ''; });
+
+    let searchTimer = null;
+    document.getElementById('searchInput').addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        currentQuery = e.target.value.trim();
+        filterAndRender();
+      }, 150);
+    });
 
     window.addEventListener('hashchange', () => {
       currentVoice = voiceFromHash();

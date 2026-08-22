@@ -252,6 +252,22 @@
       box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
     }
 
+    .search-input {
+      border: 1px solid var(--border-light);
+      border-radius: 999px;
+      padding: 0.38rem 0.9rem;
+      font-size: 0.78rem;
+      font-family: inherit;
+      color: var(--text-body);
+      width: 200px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
+    }
+
     /* ── Stats bar ────────────────────────────────── */
     .stats-bar {
       max-width: 1400px;
@@ -832,7 +848,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.6</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.7</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -982,6 +998,9 @@
             <option value="Misinformation">Misinformation</option>
           </optgroup>
         </select>
+      </div>
+      <div class="filter-group">
+        <input type="search" class="search-input" id="searchInput" placeholder="Search headlines…">
       </div>
     </div>
   </div>
@@ -1333,6 +1352,7 @@
     let allArticles = [];
     let currentDays = null;  // null = all
     let currentFilter = 'all';
+    let currentQuery = '';
     let currentTagFilter = null; // null = all, 'key', 'research'
     let userTags = {};       // { [headline]: { key: bool, research: bool } }
     let syncUrl = '';
@@ -1698,6 +1718,14 @@
         filtered = filtered.filter(a => (a.tags || '').toLowerCase().includes(kw));
       }
 
+      // Free-text search across headline, tags, source, author
+      if (currentQuery) {
+        const q = currentQuery.toLowerCase();
+        filtered = filtered.filter(a =>
+          (a.headline + ' ' + (a.tags || '') + ' ' + a.source + ' ' + (a.author || ''))
+            .toLowerCase().includes(q));
+      }
+
       // Apply user tag filter
       if (currentTagFilter) {
         filtered = filtered.filter(a => {
@@ -1774,6 +1802,15 @@
     document.getElementById('filterSelect').addEventListener('change', function(e) {
       currentFilter = e.target.value;
       filterAndRender();
+    });
+
+    let searchTimer = null;
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function() {
+        currentQuery = e.target.value.trim();
+        filterAndRender();
+      }, 150);
     });
 
     // Summary tag clicks (delegated) — sync with dropdown
