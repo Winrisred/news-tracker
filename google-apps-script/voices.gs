@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.0 (2026-08)
+// Version: v3.6 (2026-08)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -71,6 +71,8 @@ const VOICES = [
   { person: "Simon Willison",         publication: "simonwillison.net",          desk: DESK_RESEARCH, type: "rss", url: "https://simonwillison.net/atom/entries/" },
   { person: "Dwarkesh Patel",         publication: "Dwarkesh Podcast",           desk: DESK_RESEARCH, type: "rss", url: "https://www.dwarkesh.com/feed" },
   { person: "Gary Marcus",            publication: "Marcus on AI",               desk: DESK_RESEARCH, type: "rss", url: "https://garymarcus.substack.com/feed" },
+  { person: "Melanie Mitchell",       publication: "AI: A Guide for Thinking Humans", desk: DESK_RESEARCH, type: "rss", url: "https://aiguide.substack.com/feed" },
+  { person: "Fei-Fei Li",             publication: "Dr. Fei-Fei Li",             desk: DESK_RESEARCH, type: "rss", url: "https://drfeifei.substack.com/feed" },
 
   // Industry & Chips
   { person: "Ben Thompson",           publication: "Stratechery",                desk: DESK_INDUSTRY, type: "rss", url: "https://stratechery.com/feed/" },
@@ -85,6 +87,8 @@ const VOICES = [
 
   // Culture & Society
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
+  { person: "Jasmine Sun",            publication: "jasmi.news",                 desk: DESK_CULTURE, type: "rss", url: "https://jasmi.news/feed" },
+  { person: "Shoshana Zuboff",        publication: "Shoshana Zuboff",            desk: DESK_CULTURE, type: "rss", url: "https://shoshanazuboff.substack.com/feed" },
   { person: "Yuval Noah Harari",      publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Yuval+Noah+Harari%22+AI&format=rss&mkt=en-US" },
   { person: "Ted Chiang",             publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Ted+Chiang%22+AI&format=rss&mkt=en-US" },
 ];
