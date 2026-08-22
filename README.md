@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.9** (2026-08)
+**Current version: v3.10** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest.
 
@@ -143,6 +143,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.10** (2026-08) — Kaltheuner feed URL fixed: a Substack @handle is not the publication subdomain (`frederikekaltheuner1.substack.com/feed` serves an HTML page, which broke XML parsing); her real feed is `frederike.substack.com/feed`.
 - **v3.9** (2026-08) — Arvind Narayanan (AI as Normal Technology, formerly AI Snake Oil) joins Researchers & Builders; Frederike Kaltheuner joins Policy & China — both with sketch portraits. Roster: 26.
 - **v3.8** (2026-08) — Audrey Tang joins Policy & China (audreyt.substack.com), with sketch portrait. Roster: 24.
 - **v3.7** (2026-08) — Search boxes on Headlines (headline/tags/source/author, combines with existing filters) and Voices (full-text over essays; results river replaces the grid while a query is active). All three pages now searchable.
