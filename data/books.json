@@ -1,6 +1,271 @@
 {
- "generated": null,
- "label": "AIBestBooks",
- "count": 0,
- "books": []
+ "generated": "2026-08-24 12:24",
+ "label": "AIBestBook",
+ "count": 33,
+ "books": [
+  {
+   "title": "The age of Extraction",
+   "authors": "Wu",
+   "year": "2025",
+   "slug": "the-age-of-extraction",
+   "added": "2026-08-23",
+   "cover": true
+  },
+  {
+   "title": "Your face belongs to us",
+   "authors": "Hill, Kashmir",
+   "year": "2023",
+   "slug": "your-face-belongs-to-us",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Unmasking AI : my mission to protect what is human in a world of machines",
+   "authors": "Buolamwini, Joy",
+   "year": "2023",
+   "slug": "unmasking-ai-my-mission-to-protect-what-is-human-in-a-world",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "This is for everyone",
+   "authors": "Berners-Lee, Timothy",
+   "year": "2025",
+   "slug": "this-is-for-everyone",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The thinking machine",
+   "authors": "Witt, Stephen",
+   "year": "2025",
+   "slug": "the-thinking-machine",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The sirens' call",
+   "authors": "Hayes, Chris",
+   "year": "2025",
+   "slug": "the-sirens-call",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The quantified worker",
+   "authors": "Ajunwa, Ifeoma",
+   "year": "2023",
+   "slug": "the-quantified-worker",
+   "added": "2026-08-08",
+   "cover": false
+  },
+  {
+   "title": "The coming wave",
+   "authors": "Suleyman, Mustafa",
+   "year": "2023",
+   "slug": "the-coming-wave",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The battle for your brain",
+   "authors": "Farahany, Nita",
+   "year": "2023",
+   "slug": "the-battle-for-your-brain",
+   "added": "2026-08-08",
+   "cover": false
+  },
+  {
+   "title": "The anxious generation",
+   "authors": "Haidt, Jonathan",
+   "year": "2024",
+   "slug": "the-anxious-generation",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The Worlds I See. Curiosity, Exploration, and Discovery at the Dawn of AI",
+   "authors": "Fei-Fei, Li",
+   "year": "2023",
+   "slug": "the-worlds-i-see-curiosity-exploration-and-discovery-at-the",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The Tech Coup",
+   "authors": "Schaake, Marietje",
+   "year": "2024",
+   "slug": "the-tech-coup",
+   "added": "2026-08-08",
+   "cover": false
+  },
+  {
+   "title": "The Infinity Machine",
+   "authors": "Mallaby",
+   "year": "2026",
+   "slug": "the-infinity-machine",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The AI Con",
+   "authors": "Bender, Emily M and Hanna, Alex",
+   "year": "2025",
+   "slug": "the-ai-con",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Taming Silicon Valley",
+   "authors": "Marcus, Gary",
+   "year": "2024",
+   "slug": "taming-silicon-valley",
+   "added": "2026-08-08",
+   "cover": false
+  },
+  {
+   "title": "Supremacy",
+   "authors": "Olson, Parmy",
+   "year": "2024",
+   "slug": "supremacy",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Race after technology",
+   "authors": "Benjamin, Ruha",
+   "year": "2019",
+   "slug": "race-after-technology",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Prophecy",
+   "authors": "Véliz",
+   "year": "2026",
+   "slug": "prophecy",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Power and Progress",
+   "authors": "Acemoglu, Daron and Johnson, Simon",
+   "year": "2023",
+   "slug": "power-and-progress",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "On privacy and Technology",
+   "authors": "Solove, Daniel J.",
+   "year": "2025",
+   "slug": "on-privacy-and-technology",
+   "added": "2026-08-08",
+   "cover": false
+  },
+  {
+   "title": "Nexus: A Brief History of Information Networks from the Stone Age to AI",
+   "authors": "Harari, Yuval Noah",
+   "year": "2024",
+   "slug": "nexus-a-brief-history-of-information-networks-from-the-stone",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Guardrails. Guiding human decisions in the age of AI",
+   "authors": "Gasser, Urs and Mayer-Schönberger, Viktor",
+   "year": "2024",
+   "slug": "guardrails-guiding-human-decisions-in-the-age-of-ai",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Empire of AI",
+   "authors": "Hao, Karen",
+   "year": "2025",
+   "slug": "empire-of-ai",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Digital Empires. The global battle to regulate technology",
+   "authors": "Bradford, Anu",
+   "year": "2023",
+   "slug": "digital-empires-the-global-battle-to-regulate-technology",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Cyberselfish",
+   "authors": "Borsook, Paulina",
+   "year": "2000",
+   "slug": "cyberselfish",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Cyberlibertarianism. The right-wing politics of digital technology",
+   "authors": "Golumbia, David",
+   "year": "2024",
+   "slug": "cyberlibertarianism-the-right-wing-politics-of-digital-techn",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Code Dependent",
+   "authors": "Murgia, Madhumita",
+   "year": "2024",
+   "slug": "code-dependent",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Careless people",
+   "authors": "Wynn-Williams, Sarah",
+   "year": "2025",
+   "slug": "careless-people",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Breakneck",
+   "authors": "Dan Wang",
+   "year": "2025",
+   "slug": "breakneck",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Blood in the machine",
+   "authors": "Merchant, Brian",
+   "year": "2023",
+   "slug": "blood-in-the-machine",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Atlas of AI",
+   "authors": "Crawford, Kate",
+   "year": "2021",
+   "slug": "atlas-of-ai",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "AI Snake Oil",
+   "authors": "Narayanan, Arvind and Kapoor, Sayash",
+   "year": "2024",
+   "slug": "ai-snake-oil",
+   "added": "2026-08-08",
+   "cover": false
+  },
+  {
+   "title": "AI 2041. Ten visions for our future",
+   "authors": "Lee, Kai-Fu and Qiufan, Chen",
+   "year": "2021",
+   "slug": "ai-2041-ten-visions-for-our-future",
+   "added": "2026-08-08",
+   "cover": true
+  }
+ ]
 }
