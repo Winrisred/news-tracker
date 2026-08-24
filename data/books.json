@@ -1,5 +1,5 @@
 {
- "generated": "2026-08-24 14:57",
+ "generated": "2026-08-24 15:29",
  "label": "AIBestBook",
  "count": 33,
  "books": [
@@ -161,7 +161,7 @@
    "year": "2025",
    "slug": "on-privacy-and-technology",
    "added": "2026-08-08",
-   "cover": false
+   "cover": true
   },
   {
    "title": "Nexus: A Brief History of Information Networks from the Stone Age to AI",
