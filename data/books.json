@@ -1,7 +1,7 @@
 {
- "generated": "2026-08-24 15:29",
+ "generated": "2026-08-24 17:01",
  "label": "AIBestBook",
- "count": 33,
+ "count": 38,
  "books": [
   {
    "title": "The age of Extraction",
@@ -16,6 +16,14 @@
    "authors": "Hill, Kashmir",
    "year": "2023",
    "slug": "your-face-belongs-to-us",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Your Data Will Be Used Against You",
+   "authors": "Ferguson, Andrew Guthrie",
+   "year": "2026",
+   "slug": "your-data-will-be-used-against-you",
    "added": "2026-08-08",
    "cover": true
   },
@@ -80,6 +88,14 @@
    "authors": "Haidt, Jonathan",
    "year": "2024",
    "slug": "the-anxious-generation",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The age of surveillance capitalism : the fight for a human future at the new frontier of power",
+   "authors": "Zuboff, Shoshana",
+   "year": "2019",
+   "slug": "the-age-of-surveillance-capitalism-the-fight-for-a-human-fut",
    "added": "2026-08-08",
    "cover": true
   },
@@ -172,10 +188,34 @@
    "cover": true
   },
   {
+   "title": "More everything forever",
+   "authors": "Becker, Adam",
+   "year": "2025",
+   "slug": "more-everything-forever",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
    "title": "Guardrails. Guiding human decisions in the age of AI",
    "authors": "Gasser, Urs and Mayer-Schönberger, Viktor",
    "year": "2024",
    "slug": "guardrails-guiding-human-decisions-in-the-age-of-ai",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Governance by numbers. The making of legal model of allegiance",
+   "authors": "Supiot, Alain",
+   "year": "2017",
+   "slug": "governance-by-numbers-the-making-of-legal-model-of-allegianc",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "Ghost work",
+   "authors": "L.Gray, Mary and Suri, Siddharth",
+   "year": "2019",
+   "slug": "ghost-work",
    "added": "2026-08-08",
    "cover": true
   },
