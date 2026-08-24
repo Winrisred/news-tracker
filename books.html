@@ -289,7 +289,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.14</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.15</span></div>
       <h1>AI Books</h1>
       <p class="header-subtitle">The bookshelf: the books I consider essential on AI, straight from my arxiu</p>
       <div class="header-accent"></div>
@@ -350,7 +350,9 @@
       const shelf = document.getElementById('shelf');
       const stats = document.getElementById('statsCount');
       try {
-        const response = await fetch('data/books.json');
+        // Cache-bust: GitHub Pages serves this with max-age=600, so without
+        // it a freshly pushed shelf stays invisible for up to 10 minutes
+        const response = await fetch('data/books.json?_=' + Date.now());
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
         const books = data.books || [];

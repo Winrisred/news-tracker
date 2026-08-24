@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.14** (2026-08)
+**Current version: v3.15** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest. (Data-only refreshes — e.g. the Books export — don't bump the version; it tracks the site's code and design.)
 
@@ -147,6 +147,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.15** (2026-08) — Books page fetches its data with a cache-buster: GitHub Pages serves `books.json` with `max-age=600`, so a freshly pushed shelf could stay invisible in the PWA for ten minutes.
 - **v3.14** (2026-08) — The Library page is now **Books** (`books.html`, tab and title) — "Library" collided with the Arxiu app's own Library, and the data already lived in `data/books.json` + `images/books/`. Its updater is `update-books-newstracker.sh` in the arxiu repo, for the same reason. **The old `library.html` URL no longer exists.**
 - **v3.13** (2026-08) — New **Library** page: a bookshelf of the books labelled `AIBestBook` in the private arxiu, exported on demand via `scripts/export_ai_books.py` (in the arxiu project) — static data + self-hosted covers (fetched once from Open Library/Google Books), typographic spine placeholders for the rest. Fourth nav tab everywhere.
 - **v3.12** (2026-08) — The Data Tank joins Policy & China (via their Medium feed — datatank.org has none) with their logo. EU AI Industrial Policy Monitor's logo removed (it's an AI Now Institute project, so its Substack logo duplicated the AI Now mark; the tile uses the standard placeholder). Roster: 30.
