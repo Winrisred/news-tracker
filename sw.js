@@ -1,4 +1,4 @@
-const CACHE_NAME = 'news-tracker-v10';
+const CACHE_NAME = 'news-tracker-v11';
 
 // Install — cache core assets
 self.addEventListener('install', event => {
@@ -10,6 +10,7 @@ self.addEventListener('install', event => {
         cache.add('/news-tracker/index.html'),
         cache.add('/news-tracker/voices.html'),
         cache.add('/news-tracker/incidents.html'),
+        cache.add('/news-tracker/library.html'),
         cache.add('/news-tracker/manifest.json'),
         cache.add('/news-tracker/images/favicon-192.png')
       ]);

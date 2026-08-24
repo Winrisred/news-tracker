@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Library — The Bookshelf</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0C1B2A">
+  <!-- Content-Security-Policy: same defense-in-depth as index.html -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://gc.zgo.at; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://docs.google.com https://*.googleusercontent.com https://script.google.com https://winrisred.goatcounter.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none';">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="images/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+  <style>
+    /* ── Self-hosted fonts (privacy: no IP leak to Google) ── */
+    @font-face {
+      font-family: 'DM Sans';
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+      src: url('fonts/dm-sans-latin.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Sans';
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+      src: url('fonts/dm-sans-latin-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('fonts/dm-serif-display-latin.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('fonts/dm-serif-display-latin-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+    /* ── Reset & Base ─────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --navy: #0C1B2A;
+      --navy-light: #142840;
+      --navy-mid: #1A3352;
+      --red: #E63946;
+      --red-dark: #C5303C;
+      --cream: #F8F6F2;
+      --cream-dark: #EDE9E3;
+      --white: #FFFFFF;
+      --text-dark: #1A1A2E;
+      --text-body: #3D3D56;
+      --text-muted: #7A7A8E;
+      --border-light: #E2DED8;
+      --radius: 8px;
+      --shadow-sm: 0 1px 3px rgba(12, 27, 42, 0.06);
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--cream);
+      color: var(--text-body);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────────── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 3rem 2rem 2.5rem;
+    }
+
+    .header-inner { max-width: 1400px; margin: 0 auto; }
+
+    .header-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--red);
+      margin-bottom: 0.5rem;
+    }
+
+    .header-version {
+      text-transform: none;
+      font-weight: 500;
+      font-size: 0.62rem;
+      opacity: 0.75;
+      margin-left: 0.35rem;
+      letter-spacing: 0.1em;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 2.6rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--white);
+    }
+
+    .header-subtitle {
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 0.6rem;
+      max-width: 520px;
+    }
+
+    .header-accent {
+      width: 48px;
+      height: 3px;
+      background: var(--red);
+      margin-top: 1.5rem;
+      border-radius: 2px;
+    }
+
+    .site-nav { display: flex; gap: 0.6rem; margin-top: 1.75rem; flex-wrap: wrap; }
+
+    .site-tab {
+      padding: 0.42rem 1.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: all 0.15s;
+    }
+
+    .site-tab:hover { border-color: rgba(255, 255, 255, 0.6); color: var(--white); }
+    .site-tab.active { background: var(--red); border-color: var(--red); color: var(--white); }
+
+    /* ── Stats ────────────────────────────────────── */
+    .stats-bar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.4rem 2rem 0;
+    }
+
+    .stats-count {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    /* ── The Shelf ────────────────────────────────── */
+    .shelf-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 4.5rem;
+    }
+
+    .shelf {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
+      gap: 2rem 1.4rem;
+      align-items: end;
+    }
+
+    .book { display: flex; flex-direction: column; }
+
+    .book-cover {
+      aspect-ratio: 2 / 3;
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+      background: var(--navy);
+      box-shadow: 0 10px 18px rgba(12, 27, 42, 0.18), 0 3px 6px rgba(12, 27, 42, 0.12);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .book:hover .book-cover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 26px rgba(12, 27, 42, 0.22), 0 4px 8px rgba(12, 27, 42, 0.12);
+    }
+
+    .book-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Typographic placeholder for books without a fetched cover */
+    .book-cover.no-img {
+      background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 90%);
+      padding: 1rem 0.85rem 0.85rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .book-cover.no-img::before {
+      content: '';
+      position: absolute;
+      left: 9px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .ph-title {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 0.92rem;
+      line-height: 1.3;
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    .ph-author {
+      margin-top: auto;
+      font-size: 0.64rem;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .book-caption { margin-top: 0.65rem; }
+
+    .cap-title {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 0.9rem;
+      line-height: 1.3;
+      color: var(--navy);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .cap-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .empty {
+      padding: 4rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    /* ── Footer ───────────────────────────────────── */
+    footer {
+      background: var(--navy);
+      color: rgba(255, 255, 255, 0.4);
+      text-align: center;
+      padding: 2.5rem 2rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.02em;
+    }
+
+    footer strong { color: rgba(255, 255, 255, 0.7); }
+
+    /* ── Responsive ───────────────────────────────── */
+    @media (max-width: 640px) {
+      header { padding: 2.25rem 1.25rem 2rem; }
+      h1 { font-size: 2rem; }
+      .stats-bar, .shelf-wrap { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .shelf { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 1.5rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.13</span></div>
+      <h1>AI Library</h1>
+      <p class="header-subtitle">The bookshelf: the books I consider essential on AI, straight from my arxiu</p>
+      <div class="header-accent"></div>
+      <nav class="site-nav">
+        <a class="site-tab" href="index.html">Headlines</a>
+        <a class="site-tab" href="voices.html">Voices</a>
+        <a class="site-tab" href="incidents.html">Incidents</a>
+        <a class="site-tab active" href="library.html">Library</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <span class="stats-count" id="statsCount">Loading...</span>
+  </div>
+
+  <div class="shelf-wrap">
+    <div class="shelf" id="shelf"></div>
+  </div>
+
+  <footer>
+    <strong>AI Library</strong> — Books labelled in my arxiu, exported to this shelf
+  </footer>
+
+  <script>
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function safeSlug(s) {
+      return String(s || '').replace(/[^a-z0-9-]/g, '');
+    }
+
+    function bookHtml(b) {
+      const meta = [b.authors, b.year].map(x => String(x || '').trim()).filter(Boolean).join(' · ');
+      const cover = b.cover
+        ? `<div class="book-cover"><img src="images/books/${safeSlug(b.slug)}.jpg" alt="" loading="lazy" onerror="this.closest('.book-cover').classList.add('no-img');this.remove();"></div>`
+        : `<div class="book-cover no-img">
+             <div class="ph-title">${escapeHtml(b.title)}</div>
+             <div class="ph-author">${escapeHtml(b.authors || '')}</div>
+           </div>`;
+      return `
+      <div class="book" title="${escapeHtml(b.title)}">
+        ${cover}
+        <div class="book-caption">
+          <div class="cap-title">${escapeHtml(b.title)}</div>
+          ${meta ? `<div class="cap-meta">${escapeHtml(meta)}</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    async function load() {
+      const shelf = document.getElementById('shelf');
+      const stats = document.getElementById('statsCount');
+      try {
+        const response = await fetch('data/books.json');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        const books = data.books || [];
+
+        if (books.length === 0) {
+          stats.textContent = 'The shelf is empty';
+          shelf.innerHTML = `
+            <div class="empty" style="grid-column: 1 / -1;">
+              <p>No books exported yet.</p>
+              <p style="font-size:0.8rem;margin-top:0.4rem;">Run <code>scripts/export_ai_books.py</code> in the arxiu project,<br>then commit &amp; push this repo.</p>
+            </div>`;
+          return;
+        }
+
+        shelf.innerHTML = books.map(bookHtml).join('');
+        stats.textContent =
+          books.length + (books.length === 1 ? ' book' : ' books') +
+          ' · from my arxiu' +
+          (data.generated ? ' · updated ' + data.generated.slice(0, 10) : '');
+      } catch (e) {
+        stats.textContent = '';
+        shelf.innerHTML = `<div class="empty" style="grid-column: 1 / -1;">Could not load the shelf (${escapeHtml(e.message)}).</div>`;
+      }
+    }
+
+    load();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
+  <!-- GoatCounter analytics -->
+  <script data-goatcounter="https://winrisred.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
