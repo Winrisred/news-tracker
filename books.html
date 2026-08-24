@@ -289,7 +289,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.15</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.16</span></div>
       <h1>AI Books</h1>
       <p class="header-subtitle">The bookshelf: the books I consider essential on AI, straight from my arxiu</p>
       <div class="header-accent"></div>
@@ -328,10 +328,12 @@
       return String(s || '').replace(/[^a-z0-9-]/g, '');
     }
 
+    let coverVersion = '';
+
     function bookHtml(b) {
       const meta = [b.authors, b.year].map(x => String(x || '').trim()).filter(Boolean).join(' · ');
       const cover = b.cover
-        ? `<div class="book-cover"><img src="images/books/${safeSlug(b.slug)}.jpg" alt="" loading="lazy" onerror="this.closest('.book-cover').classList.add('no-img');this.remove();"></div>`
+        ? `<div class="book-cover"><img src="images/books/${safeSlug(b.slug)}.jpg${coverVersion ? '?v=' + coverVersion : ''}" alt="" loading="lazy" onerror="this.closest('.book-cover').classList.add('no-img');this.remove();"></div>`
         : `<div class="book-cover no-img">
              <div class="ph-title">${escapeHtml(b.title)}</div>
              <div class="ph-author">${escapeHtml(b.authors || '')}</div>
@@ -356,6 +358,10 @@
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
         const books = data.books || [];
+        // Regenerated covers keep their filename, so a browser would serve
+        // the stale image for max-age=600. Tie the URL to the export stamp:
+        // fresh after every export, cached normally in between.
+        coverVersion = encodeURIComponent(data.generated || '');
 
         if (books.length === 0) {
           stats.textContent = 'The shelf is empty';
