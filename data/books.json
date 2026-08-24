@@ -1,7 +1,7 @@
 {
- "generated": "2026-08-24 17:10",
+ "generated": "2026-08-24 18:29",
  "label": "AIBestBook",
- "count": 38,
+ "count": 39,
  "books": [
   {
    "title": "The age of Extraction",
@@ -72,6 +72,14 @@
    "authors": "Suleyman, Mustafa",
    "year": "2023",
    "slug": "the-coming-wave",
+   "added": "2026-08-08",
+   "cover": true
+  },
+  {
+   "title": "The black box society: The secret algorithms that control money and information",
+   "authors": "Pasquale, Frank",
+   "year": "2015",
+   "slug": "the-black-box-society-the-secret-algorithms-that-control-mon",
    "added": "2026-08-08",
    "cover": true
   },
