@@ -1,5 +1,5 @@
 {
- "generated": "2026-08-24 12:24",
+ "generated": "2026-08-24 14:57",
  "label": "AIBestBook",
  "count": 33,
  "books": [
@@ -57,7 +57,7 @@
    "year": "2023",
    "slug": "the-quantified-worker",
    "added": "2026-08-08",
-   "cover": false
+   "cover": true
   },
   {
    "title": "The coming wave",
@@ -73,7 +73,7 @@
    "year": "2023",
    "slug": "the-battle-for-your-brain",
    "added": "2026-08-08",
-   "cover": false
+   "cover": true
   },
   {
    "title": "The anxious generation",
@@ -97,7 +97,7 @@
    "year": "2024",
    "slug": "the-tech-coup",
    "added": "2026-08-08",
-   "cover": false
+   "cover": true
   },
   {
    "title": "The Infinity Machine",
@@ -121,7 +121,7 @@
    "year": "2024",
    "slug": "taming-silicon-valley",
    "added": "2026-08-08",
-   "cover": false
+   "cover": true
   },
   {
    "title": "Supremacy",
@@ -257,7 +257,7 @@
    "year": "2024",
    "slug": "ai-snake-oil",
    "added": "2026-08-08",
-   "cover": false
+   "cover": true
   },
   {
    "title": "AI 2041. Ten visions for our future",
