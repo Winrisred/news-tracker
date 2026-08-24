@@ -4,3 +4,8 @@
 .claude/
 images/voices/voices images numbered/
 .DS_Store
+
+# Never publish source PDFs or half-written images (export scratch)
+images/books/*.pdf
+*.src.pdf
+*.tmp.jpg
