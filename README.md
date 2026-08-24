@@ -1,8 +1,8 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.13** (2026-08)
+**Current version: v3.14** (2026-08)
 
-Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest. (Data-only refreshes — e.g. the Library export — don't bump the version; it tracks the site's code and design.)
+Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest. (Data-only refreshes — e.g. the Books export — don't bump the version; it tracks the site's code and design.)
 
 Automated news aggregator that collects AI and BigTech headlines from RSS feeds and the AISI blog, stores them in Google Sheets, and displays them on a privacy-friendly web dashboard installable as a PWA.
 
@@ -10,7 +10,7 @@ Four pages, one identity:
 
 - **Headlines** (`index.html`) — the wire desk: hourly headlines from major outlets, filtered by company/topic keywords.
 - **Voices** (`voices.html`) — the reading room: essays & commentary from a curated roster of 30 AI voices (newsletters, blogs, and press coverage) in four desks: Researchers & Builders, Industry & Chips, Policy & China, Culture & Society. The landing view is a grid of author squares (portrait or styled placeholder, desk-colored); clicking a square opens that voice's posts. No keyword filtering — the roster is curated by author.
-- **Library** (`library.html`) — the bookshelf: the books labelled `AIBestBook` in my private arxiu (PocketBase on the home NUC), exported to a static shelf with self-hosted covers. Updated on demand by running `scripts/export_ai_books.py` **in the arxiu project** (it writes `data/books.json` + `images/books/*.jpg` here; covers are fetched once from Open Library/Google Books and then live in this repo), followed by a commit & push. Books without a findable cover get a typographic spine-style placeholder.
+- **Books** (`books.html`) — the bookshelf: the books labelled `AIBestBook` in my private arxiu (PocketBase on the home NUC), exported to a static shelf with self-hosted covers. Update it on demand with one command **in the arxiu project**: `scripts/update-books-newstracker.sh` (it runs the export, then commits & pushes this repo). Covers are rendered from each book's own PDF — the right edition by construction — falling back to an online lookup only for records without one, and to a typographic spine placeholder when nothing is found. Named "Books" here to avoid colliding with the Arxiu app's own Library.
 - **Incidents** (`incidents.html`) — the accountability ledger: ~2,250 documented AI incidents from the [AIAAIC Repository](https://www.aiaaic.org/aiaaic-repository) (CC BY-SA 4.0, fetched from its public sheet) plus a live stream of new reports from the [AI Incident Database](https://incidentdatabase.ai) RSS. The two sources stay as parallel streams with distinct visuals (petrol-blue registry rows with taxonomy chips vs sienna report rows with snippets) — never merged or deduplicated across each other. Filters by source, year, sector, and full-text search.
 
 ## Setup
@@ -88,11 +88,11 @@ news-tracker/
 │   ├── general/              <- 180 local abstract/sky/landscape fallbacks (RSS)
 │   └── favicon-*.png         <- Favicons and PWA icons
 ├── data/
-│   └── books.json            <- Library data (written by the arxiu export script)
+│   └── books.json            <- Books data (written by the arxiu export script)
 ├── index.html                <- Headlines dashboard
 ├── voices.html               <- Voices reading room
 ├── incidents.html            <- Incidents ledger
-├── library.html              <- Library bookshelf
+├── books.html                <- Books bookshelf
 ├── manifest.json             <- PWA manifest
 ├── sw.js                     <- Service worker (offline support)
 └── README.md
@@ -147,6 +147,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.14** (2026-08) — The Library page is now **Books** (`books.html`, tab and title) — "Library" collided with the Arxiu app's own Library, and the data already lived in `data/books.json` + `images/books/`. Its updater is `update-books-newstracker.sh` in the arxiu repo, for the same reason. **The old `library.html` URL no longer exists.**
 - **v3.13** (2026-08) — New **Library** page: a bookshelf of the books labelled `AIBestBook` in the private arxiu, exported on demand via `scripts/export_ai_books.py` (in the arxiu project) — static data + self-hosted covers (fetched once from Open Library/Google Books), typographic spine placeholders for the rest. Fourth nav tab everywhere.
 - **v3.12** (2026-08) — The Data Tank joins Policy & China (via their Medium feed — datatank.org has none) with their logo. EU AI Industrial Policy Monitor's logo removed (it's an AI Now Institute project, so its Substack logo duplicated the AI Now mark; the tile uses the standard placeholder). Roster: 30.
 - **v3.11** (2026-08) — Three publication-voices added with fetched logos: EU AI Industrial Policy Monitor and AI Now Institute (Policy & China), and State of AI Report (Industry & Chips, via Air Street Press — stateof.ai itself has no feed). Roster: 29.
