@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.17** (2026-08)
+**Current version: v3.18** (2026-08)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest. (Data-only refreshes — e.g. the Books export — don't bump the version; it tracks the site's code and design.)
 
@@ -147,6 +147,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.18** (2026-08) — Icon nav. The four section tabs carry line icons (newspaper, quote bubble, alert triangle, open book) beside their labels, and below 640px they collapse to icon-only 44px round buttons — on a phone the four labels no longer overflow the header, leaving *Books* clipped off-screen. The Books stats line ("39 books · from my arxiu · updated…") is smaller too, so it holds one line on a phone.
 - **v3.17** (2026-08) — New favicon and PWA icon: the *headline block* — a red eyebrow rule above three cream lines, on the site's navy — replacing the stock blue cube. Drawn from the site's own palette, generated at every size from `scripts`-style PIL source (kept in the commit message), square and opaque for iOS. Dropped 3 MB of unreferenced old icon art.
 - **v3.16** (2026-08) — Cover images are versioned by the export timestamp, so a regenerated cover (same filename, new content) isn't masked by the browser's ten-minute cache.
 - **v3.15** (2026-08) — Books page fetches its data with a cache-buster: GitHub Pages serves `books.json` with `max-age=600`, so a freshly pushed shelf could stay invisible in the PWA for ten minutes.

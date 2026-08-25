@@ -134,6 +134,9 @@
     .site-nav { display: flex; gap: 0.6rem; margin-top: 1.75rem; flex-wrap: wrap; }
 
     .site-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
       padding: 0.42rem 1.1rem;
       border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 999px;
@@ -148,6 +151,31 @@
     .site-tab:hover { border-color: rgba(255, 255, 255, 0.6); color: var(--white); }
     .site-tab.active { background: var(--red); border-color: var(--red); color: var(--white); }
 
+    .tab-icon {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Mobile: icon-only pills, so all four tabs fit on one row */
+    @media (max-width: 640px) {
+      .site-nav { gap: 0.55rem; flex-wrap: nowrap; }
+      .site-tab {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+      }
+      .tab-label { display: none; }
+      .tab-icon { width: 20px; height: 20px; }
+    }
+
     /* ── Stats ────────────────────────────────────── */
     .stats-bar {
       max-width: 1200px;
@@ -156,10 +184,10 @@
     }
 
     .stats-count {
-      font-size: 0.72rem;
+      font-size: 0.64rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.09em;
       color: var(--text-muted);
     }
 
@@ -281,6 +309,7 @@
       header { padding: 2.25rem 1.25rem 2rem; }
       h1 { font-size: 2rem; }
       .stats-bar, .shelf-wrap { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .stats-count { font-size: 0.58rem; letter-spacing: 0.07em; }
       .shelf { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 1.5rem 1rem; }
     }
   </style>
@@ -289,15 +318,27 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.17</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.18</span></div>
       <h1>AI Books</h1>
       <p class="header-subtitle">The bookshelf: the books I consider essential on AI, straight from my arxiu</p>
       <div class="header-accent"></div>
       <nav class="site-nav">
-        <a class="site-tab" href="index.html">Headlines</a>
-        <a class="site-tab" href="voices.html">Voices</a>
-        <a class="site-tab" href="incidents.html">Incidents</a>
-        <a class="site-tab active" href="books.html">Books</a>
+        <a class="site-tab" href="index.html" aria-label="Headlines" title="Headlines">
+          <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M10 6h8v4h-8z"/><path d="M10 14h8"/><path d="M10 18h5"/></svg>
+          <span class="tab-label">Headlines</span>
+        </a>
+        <a class="site-tab" href="voices.html" aria-label="Voices" title="Voices">
+          <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 12a2 2 0 0 0 2-2V8H8"/><path d="M14 12a2 2 0 0 0 2-2V8h-2"/></svg>
+          <span class="tab-label">Voices</span>
+        </a>
+        <a class="site-tab" href="incidents.html" aria-label="Incidents" title="Incidents">
+          <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <span class="tab-label">Incidents</span>
+        </a>
+        <a class="site-tab active" href="books.html" aria-label="Books" title="Books">
+          <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+          <span class="tab-label">Books</span>
+        </a>
       </nav>
     </div>
   </header>
