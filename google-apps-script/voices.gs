@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.12 (2026-08)
+// Version: v3.19 (2026-09)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -77,7 +77,9 @@ const VOICES = [
 
   // Industry & Chips
   { person: "Ben Thompson",           publication: "Stratechery",                desk: DESK_INDUSTRY, type: "rss", url: "https://stratechery.com/feed/" },
-  { person: "Dylan Patel",            publication: "SemiAnalysis",               desk: DESK_INDUSTRY, type: "rss", url: "https://semianalysis.com/feed/" },
+  // semianalysis.com/feed/ froze on 2025-09-16 when they moved to Substack;
+  // the WordPress feed still answers 200, which is why this went unnoticed
+  { person: "Dylan Patel",            publication: "SemiAnalysis",               desk: DESK_INDUSTRY, type: "rss", url: "https://newsletter.semianalysis.com/feed" },
   { person: "Casey Newton",           publication: "Platformer",                 desk: DESK_INDUSTRY, type: "rss", url: "https://www.platformer.news/rss/" },
   { person: "Alberto Romero",         publication: "The Algorithmic Bridge",     desk: DESK_INDUSTRY, type: "rss", url: "https://thealgorithmicbridge.substack.com/feed" },
   // stateof.ai has no feed; its authors publish via Air Street Press
@@ -97,7 +99,6 @@ const VOICES = [
   // Culture & Society
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
   { person: "Jasmine Sun",            publication: "jasmi.news",                 desk: DESK_CULTURE, type: "rss", url: "https://jasmi.news/feed" },
-  { person: "Shoshana Zuboff",        publication: "Shoshana Zuboff",            desk: DESK_CULTURE, type: "rss", url: "https://shoshanazuboff.substack.com/feed" },
   { person: "Yuval Noah Harari",      publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Yuval+Noah+Harari%22+AI&format=rss&mkt=en-US" },
   { person: "Ted Chiang",             publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Ted+Chiang%22+AI&format=rss&mkt=en-US" },
 ];
@@ -698,7 +699,7 @@ function rebuildMonthlySheets() {
 
 // Voices retired from the roster (v3.0). The web page also filters them
 // out; running removeRetiredVoices() deletes their stored rows for good.
-const RETIRED_VOICES = ["Erik Hoel", "L.M. Sacasas", "Tressie McMillan Cottom"];
+const RETIRED_VOICES = ["Erik Hoel", "L.M. Sacasas", "Tressie McMillan Cottom", "Shoshana Zuboff"];
 
 function removeRetiredVoices() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
