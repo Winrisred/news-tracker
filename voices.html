@@ -767,7 +767,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.19</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.20</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -916,12 +916,11 @@
       // Culture & Society
       'Brian Merchant':          'diamond',
       'Yuval Noah Harari':       'triangle',
-      'Ted Chiang':              'triangle-o',
       'Jasmine Sun':             'circle',
     };
 
     // Retired from the roster — old rows may linger in the sheet
-    const REMOVED_VOICES = ['Erik Hoel', 'L.M. Sacasas', 'Tressie McMillan Cottom', 'Shoshana Zuboff'];
+    const REMOVED_VOICES = ['Erik Hoel', 'L.M. Sacasas', 'Tressie McMillan Cottom', 'Shoshana Zuboff', 'Ted Chiang'];
 
     // ── State ──────────────────────────────────────
     function voiceFromHash() {
@@ -1437,7 +1436,7 @@
         { date: d(7),  title: 'The Luddites Were Right About This One Thing', link: 'https://www.bloodinthemachine.com', person: 'Brian Merchant', publication: 'Blood in the Machine', desk: 'Culture & Society', kind: 'essay', standfirst: 'Two centuries later, the question is identical: not whether the machines work, but who they work for.', minutes: 12 },
         { date: d(8),  title: 'Why I Am Still Not Worried About Superintelligence (But Am Worried About You)', link: 'https://garymarcus.substack.com', person: 'Gary Marcus', publication: 'Marcus on AI', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'The gap between demo and deployment remains the story. On reliability, hype cycles, and what the benchmarks still hide.', minutes: 8 },
         { date: d(9),  title: 'Understanding AI: The Robotaxi Numbers Are Getting Serious', link: 'https://www.understandingai.org', person: 'Timothy B. Lee', publication: 'Understanding AI', desk: 'Policy & China', kind: 'essay', standfirst: 'Fresh disengagement data, three new cities, and what the insurance filings reveal about how safe these systems actually are.', minutes: 11 },
-        { date: d(10), title: 'Ted Chiang on Why AI Cannot Make Art', link: 'https://www.newyorker.com', person: 'Ted Chiang', publication: 'The New Yorker', desk: 'Culture & Society', kind: 'press', standfirst: 'The science-fiction writer on choices, intentions, and why a thousand small decisions are the substance of the thing we call art.', minutes: 0 },
+        { date: d(10), title: 'Yuval Noah Harari on the Economic and Political Perils of AI', link: 'https://www.economist.com', person: 'Yuval Noah Harari', publication: 'The Economist', desk: 'Culture & Society', kind: 'press', standfirst: 'The historian on why the information revolution keeps arriving faster than the institutions meant to absorb it.', minutes: 0 },
         { date: d(11), title: 'Tools for Thought, Tools for Slop', link: 'https://simonwillison.net', person: 'Simon Willison', publication: 'simonwillison.net', desk: 'Researchers & Builders', kind: 'essay', standfirst: 'Notes from six months of coding with agents: what stuck, what broke, and the prompting patterns I keep reaching for.', minutes: 7 },
       ];
       document.getElementById('demoNote').style.display = '';

@@ -28,7 +28,6 @@ Expected filenames:
 - timothy-b-lee.jpg
 - brian-merchant.jpg
 - yuval-noah-harari.jpg
-- ted-chiang.jpg
 Accessed 22 August 2026. The generated sketches are new derivative illustrations; these links identify the reference photographs used for likeness.
 
 1. **Shawn “swyx” Wang** — [TeamDay profile](https://www.teamday.ai/ai/people/swyx) · [image](https://unavatar.io/x/swyx)

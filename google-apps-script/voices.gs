@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.19 (2026-09)
+// Version: v3.20 (2026-09)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -100,7 +100,6 @@ const VOICES = [
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
   { person: "Jasmine Sun",            publication: "jasmi.news",                 desk: DESK_CULTURE, type: "rss", url: "https://jasmi.news/feed" },
   { person: "Yuval Noah Harari",      publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Yuval+Noah+Harari%22+AI&format=rss&mkt=en-US" },
-  { person: "Ted Chiang",             publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Ted+Chiang%22+AI&format=rss&mkt=en-US" },
 ];
 
 
@@ -699,7 +698,7 @@ function rebuildMonthlySheets() {
 
 // Voices retired from the roster (v3.0). The web page also filters them
 // out; running removeRetiredVoices() deletes their stored rows for good.
-const RETIRED_VOICES = ["Erik Hoel", "L.M. Sacasas", "Tressie McMillan Cottom", "Shoshana Zuboff"];
+const RETIRED_VOICES = ["Erik Hoel", "L.M. Sacasas", "Tressie McMillan Cottom", "Shoshana Zuboff", "Ted Chiang"];
 
 function removeRetiredVoices() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
