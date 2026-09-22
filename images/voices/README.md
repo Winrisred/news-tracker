@@ -28,6 +28,7 @@ Expected filenames:
 - timothy-b-lee.jpg
 - brian-merchant.jpg
 - yuval-noah-harari.jpg
+- abi-awomosu.jpg
 Accessed 22 August 2026. The generated sketches are new derivative illustrations; these links identify the reference photographs used for likeness.
 
 1. **Shawn “swyx” Wang** — [TeamDay profile](https://www.teamday.ai/ai/people/swyx) · [image](https://unavatar.io/x/swyx)
@@ -55,3 +56,4 @@ Accessed 22 August 2026. The generated sketches are new derivative illustrations
 23. **Audrey Tang** — [supplied Substack profile](https://substack.com/@audreyt) · [Harvard Ash Center profile](https://ash.harvard.edu/people/audrey-tang/) · [profile image](https://ash.harvard.edu/wp-content/uploads/2024/10/audrey-tang.jpg)
 24. **Frederike Kaltheuner** — [supplied Substack profile](https://substack.com/@frederikekaltheuner1) · [official website](https://frederikekaltheuner.com/) · [profile image](https://images.squarespace-cdn.com/content/v1/5e5d6ae1751d027ded1d914b/5ef72701-0859-4433-8ccf-968cb93cbc97/220128_FrederikeKaltheuner_AlenaSchmick_006.jpg)
 25. **Arvind Narayanan** — [supplied Substack profile](https://substack.com/@aisnakeoil) · [Princeton Language and Intelligence profile](https://pli.princeton.edu/speakers/arvind-narayanan) · [profile image](https://pli.princeton.edu/sites/g/files/toruqf6511/files/styles/1x1_750w_750h/public/2023-08/arvind_narayanan.jpeg?h=f186222a&itok=cOy9tfzU)
+26. **Abi Awomosu** — [Substack profile](https://abiawomosu.substack.com/about) · reference photograph supplied by the site owner, not fetched from a public page

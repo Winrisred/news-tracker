@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.20 (2026-09)
+// Version: v3.22 (2026-09)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -99,6 +99,7 @@ const VOICES = [
   // Culture & Society
   { person: "Brian Merchant",         publication: "Blood in the Machine",       desk: DESK_CULTURE, type: "rss", url: "https://www.bloodinthemachine.com/feed" },
   { person: "Jasmine Sun",            publication: "jasmi.news",                 desk: DESK_CULTURE, type: "rss", url: "https://jasmi.news/feed" },
+  { person: "Abi Awomosu",            publication: "How Not To Use AI",          desk: DESK_CULTURE, type: "rss", url: "https://abiawomosu.substack.com/feed" },
   { person: "Yuval Noah Harari",      publication: "In the press",               desk: DESK_CULTURE, type: "gnews", url: "https://www.bing.com/news/search?q=%22Yuval+Noah+Harari%22+AI&format=rss&mkt=en-US" },
 ];
 
