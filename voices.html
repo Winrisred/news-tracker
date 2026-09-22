@@ -559,6 +559,28 @@
       color: var(--desk-color, var(--navy));
     }
 
+    /* Reading length — a five-step ink ramp, so a long essay is
+       findable at a glance while scanning the river. Deliberately
+       monochrome: colour already carries the desk. Bands come from the
+       corpus itself (median 9 min, p75 18, p90 37), so the darkest
+       band really is the long tail rather than an arbitrary cutoff. */
+    .len-pill {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      background: rgba(12, 27, 42, 0.05);
+      color: var(--text-muted);
+    }
+    .len-1 { background: rgba(12, 27, 42, 0.05); color: #8A8A9C; }
+    .len-2 { background: rgba(12, 27, 42, 0.10); color: #6B6B80; }
+    .len-3 { background: rgba(12, 27, 42, 0.17); color: var(--text-body); }
+    .len-4 { background: rgba(12, 27, 42, 0.30); color: var(--navy); }
+    .len-5 { background: var(--navy); color: var(--cream); }
+
     .byline-time {
       margin-left: auto;
       font-size: 0.72rem;
@@ -767,7 +789,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.22</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.23</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1128,6 +1150,16 @@
     }
 
     // ── Rendering ──────────────────────────────────
+    // Bands from the corpus: median 9 min, p75 18, p90 37.
+    function lengthTier(minutes) {
+      if (!minutes || minutes <= 0) return 0;   // press items carry no length
+      if (minutes < 4)  return 1;
+      if (minutes < 8)  return 2;
+      if (minutes < 15) return 3;
+      if (minutes < 30) return 4;
+      return 5;
+    }
+
     function markHtml(person, desk, small) {
       const color = deskColorFor(desk);
       const shape = SHAPES[shapeFor(person)] || SHAPES['circle'];
@@ -1144,7 +1176,6 @@
       river.innerHTML = posts.map((p, i) => {
         const deskColor = deskColorFor(p.desk);
         const metaBits = [];
-        if (p.minutes > 0) metaBits.push(`<span>${p.minutes} min read</span>`);
         if (p.kind === 'press') metaBits.push('<span class="press-label">In the press</span>');
         metaBits.push(`<a class="read-link" href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">Read &rarr;</a>`);
         metaBits.push(`<button class="arxiu-btn" data-idx="${i}" title="Saves a PDF to Drive &rarr; folder &quot;Arxiu — AI Voices&quot;">Save to Arxiu</button>`);
@@ -1157,6 +1188,7 @@
             <span class="byline-sep">&middot;</span>
             <span class="byline-pub">${escapeHtml(p.publication)}</span>
             <span class="desk-pill" style="--desk-color:${deskColor};--desk-tint:${hexToTint(deskColor, 0.1)};">${escapeHtml(p.desk)}</span>
+            ${lengthTier(p.minutes) ? `<span class="len-pill len-${lengthTier(p.minutes)}" title="${p.minutes} minute read">${p.minutes} min</span>` : ''}
             <span class="byline-time">${timeAgo(p.date)}</span>
           </div>
           <h2 class="entry-title"><a href="${escapeHtml(safeLink(p.link))}" target="_blank" rel="noopener">${escapeHtml(p.title)}</a></h2>

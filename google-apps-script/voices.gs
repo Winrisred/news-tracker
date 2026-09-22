@@ -1,6 +1,6 @@
 // ============================================================
 // AI Voices Tracker — Google Apps Script
-// Version: v3.22 (2026-09)
+// Version: v3.23 (2026-09)
 //
 // Collects essays & commentary from a curated roster of AI
 // voices (newsletters, blogs, and press coverage) and stores
@@ -699,6 +699,128 @@ function rebuildMonthlySheets() {
 
 // Voices retired from the roster (v3.0). The web page also filters them
 // out; running removeRetiredVoices() deletes their stored rows for good.
+
+// ============================================================
+// BACKFILL: a Substack voice's full archive
+// ============================================================
+// Substack's /feed carries only the latest ~20 items, so a voice
+// added late joins with a truncated history — and for a prolific
+// voice those 20 slots can be taken up by a daily series, leaving
+// the essays out. This reads the same public archive API the
+// publication's own archive page uses (JSON, no key) and appends
+// whatever the sheet is missing.
+//
+// It lists newsletter posts only. A series published outside the
+// main newsletter is not returned — in a reading room of essays
+// that is usually what you want.
+
+const BACKFILL_MAX_PAGES = 12;                   // 50 per page
+const BACKFILL_TIME_BUDGET_MS = 4.5 * 60 * 1000; // stay under the 6-minute cap
+
+function backfillVoice() {
+  var ui = SpreadsheetApp.getUi();
+  var resp = ui.prompt(
+    "Backfill a Substack voice",
+    "Name, exactly as it appears in the roster (e.g. Abi Awomosu):",
+    ui.ButtonSet.OK_CANCEL);
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+
+  var name = resp.getResponseText().trim();
+  var voice = findVoice_(name);
+  if (!voice) { ui.alert('No voice called "' + name + '" is in the roster.'); return; }
+  if (voice.type !== "rss") {
+    ui.alert(name + " is a press-coverage voice — there is no archive to backfill.");
+    return;
+  }
+
+  var originMatch = String(voice.url).match(/^https?:\/\/[^\/]+/);
+  if (!originMatch) { ui.alert("Could not read the feed host for " + name + "."); return; }
+  var origin = originMatch[0];
+
+  var started = Date.now();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var master = getOrCreateSheet_(ss, MASTER_SHEET, getHeaders_());
+  var existingUrls = getExistingUrls_(master);
+
+  var posts = [];
+  var truncated = false;
+  var offset = 0;
+
+  for (var page = 0; page < BACKFILL_MAX_PAGES; page++) {
+    var batch = fetchArchivePage_(origin, offset);
+    if (!batch || !batch.length) break;  // ONLY an empty page ends the archive —
+    offset += batch.length;              // short pages are normal and not the end
+
+    for (var i = 0; i < batch.length; i++) {
+      var item = batch[i];
+      var link = item.canonical_url;
+      if (!link || existingUrls[link]) continue;
+      existingUrls[link] = true;
+
+      if (Date.now() - started > BACKFILL_TIME_BUDGET_MS) { truncated = true; break; }
+
+      var post = buildPost_(voice, {
+        date: new Date(item.post_date),
+        title: cleanText_(item.title),
+        link: link,
+        publication: voice.publication,
+        description: item.description,
+        fullContent: fetchArchiveBody_(origin, link)
+      });
+      if (post) posts.push(post);
+    }
+    if (truncated) break;
+  }
+
+  if (!posts.length) {
+    ui.alert("Nothing to add — the sheet already holds " + name + "'s full archive.");
+    return;
+  }
+
+  posts.sort(function(a, b) { return b.date - a.date; });
+  writePosts_(master, posts);
+  writeToMonthlySheets_(ss, posts);
+  updateSummary_(ss, master);
+  trimSheet_(master, MAX_ROWS);
+  autoFormatSheets_(ss);
+
+  ui.alert("Added " + posts.length + " archived posts for " + name + "." +
+    (truncated ? "\n\nStopped early to stay inside the execution limit — run it again to continue." : ""));
+}
+
+function findVoice_(name) {
+  for (var i = 0; i < VOICES.length; i++) {
+    if (VOICES[i].person.toLowerCase() === String(name).toLowerCase()) return VOICES[i];
+  }
+  return null;
+}
+
+function fetchArchivePage_(origin, offset) {
+  var response = UrlFetchApp.fetch(origin + "/api/v1/archive?sort=new&limit=50&offset=" + offset, {
+    muteHttpExceptions: true,
+    followRedirects: true,
+    headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
+  });
+  if (response.getResponseCode() !== 200) return null;
+  try { return JSON.parse(response.getContentText()); } catch (e) { return null; }
+}
+
+// The archive listing omits the post body, so reading time costs one
+// extra call per post.
+function fetchArchiveBody_(origin, link) {
+  var slug = String(link).replace(/[?#].*$/, "").replace(/\/$/, "").split("/").pop();
+  if (!slug) return "";
+  try {
+    var response = UrlFetchApp.fetch(origin + "/api/v1/posts/" + slug, {
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
+    });
+    if (response.getResponseCode() !== 200) return "";
+    return JSON.parse(response.getContentText()).body_html || "";
+  } catch (e) { return ""; }
+}
+
 const RETIRED_VOICES = ["Erik Hoel", "L.M. Sacasas", "Tressie McMillan Cottom", "Shoshana Zuboff", "Ted Chiang"];
 
 function removeRetiredVoices() {
@@ -1027,6 +1149,7 @@ function onOpen() {
     .addSeparator()
     .addItem("Update summary", "updateSummaryManual")
     .addItem("Rebuild monthly tabs", "rebuildMonthlySheets")
+    .addItem("Backfill a Substack voice", "backfillVoice")
     .addItem("Reformat all sheets", "reformatAllSheets")
     .addItem("Refresh press links", "refreshPressLinks")
     .addItem("Remove retired voices", "removeRetiredVoices")
