@@ -262,24 +262,6 @@
       color: var(--text-muted);
     }
 
-    .filter-select {
-      background: var(--white);
-      color: var(--text-body);
-      border: 1px solid var(--border-light);
-      padding: 0.45rem 0.85rem;
-      border-radius: var(--radius);
-      font-size: 0.8rem;
-      font-family: inherit;
-      cursor: pointer;
-      min-width: 220px;
-    }
-
-    .filter-select:focus {
-      outline: none;
-      border-color: var(--navy);
-      box-shadow: 0 0 0 3px rgba(12, 27, 42, 0.08);
-    }
-
     .search-input {
       border: 1px solid var(--border-light);
       border-radius: 999px;
@@ -316,43 +298,67 @@
       font-weight: 600;
     }
 
-    /* ── Topic Summary Bar ─────────────────────────── */
+    /* ── Facet rows: publication × company × topic ── */
     .summary-bar {
       max-width: 1400px;
       margin: 0 auto;
       padding: 0 2rem 0.75rem;
     }
 
-    .summary-section {
-      margin-bottom: 0.5rem;
+    /* Flex, not grid: when "+N more" is hidden, its gap goes back to the pills */
+    .facet-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.45rem 0;
+      border-top: 1px solid var(--border-light);
     }
 
-    .summary-label {
+    .facet-row:first-child { border-top: none; }
+
+    .facet-row[hidden], .facet-more[hidden] { display: none; }
+
+    .facet-label {
+      flex: none;
+      width: 6rem;
       font-size: 0.65rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: var(--text-muted);
-      margin-bottom: 0.35rem;
+      line-height: 1.65rem;
+      white-space: nowrap;
     }
 
-    .summary-tags {
+    /* Collapsed: one line of pills; "+N more" opens the rest */
+    .facet-strip {
+      flex: 1;
+      min-width: 0;
       display: flex;
       flex-wrap: wrap;
       gap: 0.3rem;
+      max-height: 1.65rem;
+      overflow: hidden;
+      overflow: clip;
     }
 
+    .facet-row.open .facet-strip { max-height: none; }
+
     .summary-tag {
+      display: inline-flex;
+      align-items: center;
+      height: 1.65rem;
       background: var(--white);
       color: var(--text-body);
       border: 1px solid var(--border-light);
-      padding: 0.25rem 0.6rem;
+      padding: 0 0.6rem;
       border-radius: 20px;
       font-size: 0.72rem;
       font-family: inherit;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      /* Colours only: animating visibility would delay hiding overflow pills */
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s;
       white-space: nowrap;
     }
 
@@ -368,16 +374,98 @@
       border-color: var(--red);
     }
 
+    .summary-tag.is-overflow { visibility: hidden; }
+
+    .summary-tag:focus-visible, .facet-more:focus-visible {
+      outline: 2px solid var(--navy);
+      outline-offset: -2px;
+    }
+
     .summary-tag .count {
       font-weight: 700;
       margin-left: 0.2rem;
       opacity: 0.7;
     }
 
-    .summary-divider {
-      height: 1px;
-      background: var(--border-light);
-      margin: 0.5rem 0;
+    .facet-more {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 1.65rem;
+      min-width: 4.75rem;
+      padding: 0 0.6rem;
+      background: none;
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .facet-more:hover { border-color: var(--navy-mid); color: var(--navy); }
+
+    /* Picks spelled out in the stats line: "86 articles from FT about OpenAI" */
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      padding: 0.1rem 0.45rem 0.1rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      vertical-align: 0.05em;
+      transition: background 0.15s;
+    }
+
+    .filter-chip:hover { background: var(--red-dark); }
+
+    .filter-chip .x {
+      font-size: 0.9rem;
+      line-height: 1;
+      opacity: 0.85;
+    }
+
+    .clear-filters {
+      background: none;
+      border: 1px solid var(--border-light);
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: inherit;
+      margin-left: 0.35rem;
+    }
+
+    .clear-filters:hover { border-color: var(--navy-mid); color: var(--navy); }
+
+    /* Phone: each row is a single strip you swipe sideways */
+    @media (max-width: 640px) {
+      .facet-row { flex-direction: column; align-items: stretch; gap: 0.2rem; }
+      .facet-label { width: auto; line-height: 1.5; }
+      .facet-strip {
+        flex: none;
+        flex-wrap: nowrap;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        padding-right: 1.5rem;
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+        mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+      }
+      .facet-strip::-webkit-scrollbar { display: none; }
+      .facet-more { display: none; }
     }
 
     /* ── Grid ─────────────────────────────────────── */
@@ -590,12 +678,13 @@
       header { padding: 2rem 1.25rem 1.75rem; }
       h1 { font-size: 1.8rem; }
       .filters-inner { padding: 0.75rem 1.25rem; }
+      .stats-bar { padding: 0.9rem 1.25rem 0.4rem; }
+      .summary-bar { padding: 0 1.25rem 0.75rem; }
       .grid {
         padding: 0.75rem 1.25rem 3rem;
         grid-template-columns: 1fr;
       }
       .filter-group { width: 100%; }
-      .filter-select { width: 100%; }
     }
 
     @media (min-width: 1200px) {
@@ -876,7 +965,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.20</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.21</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -913,132 +1002,6 @@
         <button class="tag-filter-btn active" id="tfAll" onclick="setTagFilter(null)">All</button>
         <button class="tag-filter-btn t-key" id="tfKey" onclick="setTagFilter('key')">🔑 Key</button>
         <button class="tag-filter-btn t-research" id="tfResearch" onclick="setTagFilter('research')">🔬 Res</button>
-      </div>
-      <div class="filter-group">
-        <span class="filter-label">Filter</span>
-        <select class="filter-select" id="filterSelect">
-          <option value="all">All topics & companies</option>
-          <optgroup label="AI Labs">
-            <option value="OpenAI">OpenAI</option>
-            <option value="Anthropic">Anthropic</option>
-            <option value="Google DeepMind">Google DeepMind</option>
-            <option value="Mistral">Mistral</option>
-            <option value="xAI">xAI</option>
-            <option value="Perplexity">Perplexity</option>
-            <option value="Midjourney">Midjourney</option>
-            <option value="Stability AI">Stability AI</option>
-            <option value="Safe Superintelligence">Safe Superintelligence</option>
-            <option value="Thinking Machines">Thinking Machines</option>
-          </optgroup>
-          <optgroup label="Big Tech">
-            <option value="Google">Google</option>
-            <option value="Microsoft">Microsoft</option>
-            <option value="Apple">Apple</option>
-            <option value="Meta">Meta</option>
-            <option value="Amazon">Amazon</option>
-            <option value="Samsung">Samsung</option>
-            <option value="IBM">IBM</option>
-          </optgroup>
-          <optgroup label="Chips & Hardware">
-            <option value="NVIDIA">NVIDIA</option>
-            <option value="AMD">AMD</option>
-            <option value="Intel">Intel</option>
-            <option value="TSMC">TSMC</option>
-            <option value="ASML">ASML</option>
-            <option value="Qualcomm">Qualcomm</option>
-            <option value="Broadcom">Broadcom</option>
-            <option value="Arm">Arm</option>
-            <option value="SK Hynix">SK Hynix</option>
-            <option value="Micron">Micron</option>
-            <option value="Groq">Groq</option>
-            <option value="Cerebras">Cerebras</option>
-          </optgroup>
-          <optgroup label="Cloud & Infrastructure">
-            <option value="AWS">AWS</option>
-            <option value="Azure">Azure</option>
-            <option value="Google Cloud">Google Cloud</option>
-            <option value="Oracle">Oracle</option>
-            <option value="CoreWeave">CoreWeave</option>
-            <option value="Cloudflare">Cloudflare</option>
-            <option value="Equinix">Equinix</option>
-            <option value="Digital Realty">Digital Realty</option>
-          </optgroup>
-          <optgroup label="Defense & Government">
-            <option value="Anduril">Anduril</option>
-            <option value="Palantir">Palantir</option>
-            <option value="Shield AI">Shield AI</option>
-          </optgroup>
-          <optgroup label="Enterprise & Software">
-            <option value="Salesforce">Salesforce</option>
-            <option value="Databricks">Databricks</option>
-            <option value="Snowflake">Snowflake</option>
-            <option value="Adobe">Adobe</option>
-            <option value="ServiceNow">ServiceNow</option>
-          </optgroup>
-          <optgroup label="AI Coding">
-            <option value="Cursor">Cursor</option>
-            <option value="Windsurf">Windsurf</option>
-            <option value="Replit">Replit</option>
-            <option value="Lovable">Lovable</option>
-          </optgroup>
-          <optgroup label="Chinese Tech">
-            <option value="ByteDance">ByteDance</option>
-            <option value="Huawei">Huawei</option>
-            <option value="Baidu">Baidu</option>
-            <option value="Alibaba">Alibaba</option>
-            <option value="Tencent">Tencent</option>
-            <option value="DeepSeek">DeepSeek</option>
-            <option value="Moonshot AI">Moonshot AI</option>
-            <option value="Zhipu AI">Zhipu AI</option>
-            <option value="Unitree">Unitree</option>
-          </optgroup>
-          <optgroup label="Other Companies">
-            <option value="Tesla">Tesla</option>
-            <option value="SpaceX">SpaceX</option>
-            <option value="Scale AI">Scale AI</option>
-            <option value="Runway">Runway</option>
-            <option value="Cohere">Cohere</option>
-            <option value="Hugging Face">Hugging Face</option>
-            <option value="Character.AI">Character.AI</option>
-            <option value="ElevenLabs">ElevenLabs</option>
-            <option value="Suno">Suno</option>
-            <option value="Figure AI">Figure AI</option>
-          </optgroup>
-          <optgroup label="AI Topics">
-            <option value="AI Regulation">AI Regulation</option>
-            <option value="AI Safety">AI Safety</option>
-            <option value="AI Ethics">AI Ethics</option>
-            <option value="Deepfakes">Deepfakes</option>
-            <option value="AGI">AGI</option>
-            <option value="LLM">LLM</option>
-            <option value="Generative AI">Generative AI</option>
-            <option value="Open Source AI">Open Source AI</option>
-            <option value="AI Healthcare">AI Healthcare</option>
-            <option value="AI Military">AI Military</option>
-            <option value="AI Climate">AI Climate</option>
-            <option value="AI Education">AI Education</option>
-            <option value="AI Agents">AI Agents</option>
-            <option value="AI Coding">AI Coding</option>
-            <option value="AI Copyright">AI Copyright</option>
-            <option value="AI Economy">AI Economy</option>
-          </optgroup>
-          <optgroup label="Industry Topics">
-            <option value="Semiconductors">Semiconductors</option>
-            <option value="Data Centers">Data Centers</option>
-            <option value="Cloud Computing">Cloud Computing</option>
-            <option value="Cybersecurity">Cybersecurity</option>
-            <option value="Robotics">Robotics</option>
-            <option value="Quantum Computing">Quantum Computing</option>
-          </optgroup>
-          <optgroup label="Policy & Society">
-            <option value="Government Policy">Government Policy</option>
-            <option value="Export Controls">Export Controls</option>
-            <option value="Antitrust">Antitrust</option>
-            <option value="Privacy">Privacy</option>
-            <option value="Jobs & Labor">Jobs & Labor</option>
-            <option value="Misinformation">Misinformation</option>
-          </optgroup>
-        </select>
       </div>
       <div class="filter-group">
         <input type="search" class="search-input" id="searchInput" placeholder="Search headlines…">
@@ -1392,12 +1355,21 @@
     // ── State ──────────────────────────────────────
     let allArticles = [];
     let currentDays = null;  // null = all
-    let currentFilter = 'all';
     let currentQuery = '';
     let currentTagFilter = null; // null = all, 'key', 'research'
     let userTags = {};       // { [headline]: { key: bool, research: bool } }
     let syncUrl = '';
     let renderedArticles = [];
+
+    // Facets: one pick per row; picks in different rows narrow each other.
+    const FACETS = [
+      { key: 'pub', label: 'Publications', values: a => [a.source] },
+      { key: 'co',  label: 'Companies',    values: a => a.companyList },
+      { key: 'to',  label: 'Topics',       values: a => a.topicList },
+    ];
+    const selected = { pub: null, co: null, to: null };
+    const facetOpen = { pub: false, co: false, to: false };
+    const facetSig = {}; // last rendered names+counts per row
 
     // ── Date Parsing (handles dd/MM/yyyy and other formats) ──
     function parseDate(str) {
@@ -1432,6 +1404,22 @@
         });
       }
       return articles.filter(a => a.headline && !isNaN(a.date.getTime()));
+    }
+
+    function splitList(s) {
+      return (s || '').split(',').map(x => x.trim()).filter(Boolean);
+    }
+
+    // Split the tag columns once, so facets match names exactly
+    // ("Google" must not also catch "Google DeepMind").
+    function prepareArticles(articles) {
+      articles.forEach(a => {
+        a.topicList = splitList(a.topics);
+        // AISI's own posts carry "AISI" as a company tag; the Publications
+        // row already says that, so a self-tag is dropped.
+        a.companyList = splitList(a.companies).filter(c => c !== a.source);
+      });
+      return articles;
     }
 
     function parseCSVLine(line) {
@@ -1680,114 +1668,138 @@
         </div>`;
     }
 
-    // ── Build Topic Summary ─────────────────────
-    function buildSummary(articles) {
-      const companyCounts = {};
-      const topicCounts = {};
-
-      articles.forEach(a => {
-        if (a.companies) {
-          a.companies.split(',').map(c => c.trim()).filter(Boolean).forEach(c => {
-            companyCounts[c] = (companyCounts[c] || 0) + 1;
-          });
-        }
-        if (a.topics) {
-          a.topics.split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
-            topicCounts[t] = (topicCounts[t] || 0) + 1;
-          });
-        }
-      });
-
-      const sortByCount = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]);
-      return {
-        companies: sortByCount(companyCounts),
-        topics: sortByCount(topicCounts)
-      };
+    // ── Facets ─────────────────────────────────
+    function matchesFacets(a, skipKey) {
+      return FACETS.every(f =>
+        f.key === skipKey || selected[f.key] === null || f.values(a).includes(selected[f.key]));
     }
 
-    function renderSummary(summary) {
+    // A row's counts honour every other pick but not its own,
+    // so its siblings stay visible and switchable.
+    function facetCounts(articles, facet) {
+      const counts = new Map();
+      articles.forEach(a => {
+        if (!matchesFacets(a, facet.key)) return;
+        facet.values(a).forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+      });
+      const pick = selected[facet.key];
+      if (pick !== null && !counts.has(pick)) counts.set(pick, 0); // keep the pick removable
+      return Array.from(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    }
+
+    function facetPillHtml(facet, name, count) {
+      return `<button type="button" class="summary-tag" data-facet="${facet.key}" data-value="${escapeHtml(name)}">${escapeHtml(name)}<span class="count">${count}</span></button>`;
+    }
+
+    function renderFacets(articles) {
       const bar = document.getElementById('summaryBar');
-
-      if (summary.companies.length === 0 && summary.topics.length === 0) {
-        bar.innerHTML = '';
-        return;
+      if (!bar.firstElementChild) {
+        bar.innerHTML = FACETS.map(f => `
+          <div class="facet-row" id="facet-${f.key}">
+            <div class="facet-label">${f.label}</div>
+            <div class="facet-strip"></div>
+            <button type="button" class="facet-more" data-facet="${f.key}" hidden></button>
+          </div>`).join('');
       }
+      FACETS.forEach(f => {
+        const row = document.getElementById('facet-' + f.key);
+        const strip = row.querySelector('.facet-strip');
+        const list = facetCounts(articles, f);
+        row.hidden = list.length === 0;
+        // Rebuild only when names or counts change, so a strip scrolled
+        // sideways on a phone keeps its place when one of its pills is tapped.
+        const sig = JSON.stringify(list);
+        if (facetSig[f.key] !== sig) {
+          strip.innerHTML = list.map(([name, count]) => facetPillHtml(f, name, count)).join('');
+          strip.scrollLeft = 0;
+          facetSig[f.key] = sig;
+        }
+        strip.querySelectorAll('.summary-tag').forEach(p =>
+          p.classList.toggle('active', p.dataset.value === selected[f.key]));
+        row.classList.toggle('open', facetOpen[f.key]);
+      });
+      fitFacetRows();
+    }
 
-      const renderTags = (items, type) => items.map(([name, count]) =>
-        `<button class="summary-tag${currentFilter === name ? ' active' : ''}" data-keyword="${name}" data-type="${type}">${name}<span class="count">${count}</span></button>`
-      ).join('');
-
-      let html = '';
-
-      if (summary.companies.length > 0) {
-        html += `<div class="summary-section">
-          <div class="summary-label">Companies in results</div>
-          <div class="summary-tags">${renderTags(summary.companies, 'company')}</div>
-        </div>`;
-      }
-
-      if (summary.topics.length > 0) {
-        if (summary.companies.length > 0) html += '<div class="summary-divider"></div>';
-        html += `<div class="summary-section">
-          <div class="summary-label">Topics in results</div>
-          <div class="summary-tags">${renderTags(summary.topics, 'topic')}</div>
-        </div>`;
-      }
-
-      bar.innerHTML = html;
+    // Collapsed rows show one line of pills; the rest wait behind "+N more".
+    // (On a phone the strips don't wrap, so nothing overflows and the button stays hidden.)
+    function fitFacetRows() {
+      FACETS.forEach(f => {
+        const row = document.getElementById('facet-' + f.key);
+        if (!row || row.hidden) return;
+        const pills = Array.from(row.querySelectorAll('.summary-tag'));
+        const more = row.querySelector('.facet-more');
+        const open = facetOpen[f.key];
+        const overflowing = () => pills.filter(p => p.offsetTop > pills[0].offsetTop);
+        // First without the button: if every pill fits, no button at all
+        more.hidden = true;
+        let hidden = overflowing();
+        if (hidden.length && open) {
+          more.hidden = false;
+          more.textContent = 'Less';
+          hidden = [];
+        } else if (hidden.length) {
+          more.hidden = false;
+          for (let i = 0; i < 2; i++) { // the button's own width can move the line break
+            more.textContent = `+${hidden.length} more`;
+            hidden = overflowing();
+          }
+          more.textContent = `+${hidden.length} more`;
+        }
+        pills.forEach(p => p.classList.toggle('is-overflow', hidden.includes(p)));
+      });
     }
 
     // ── Filter & Render ──────────────────────────
     function filterAndRender() {
       usedImages = {};       // Reset image tracker for fresh render
       renderedArticles = []; // Reset article index for tag buttons
-      // Date filter
-      let filtered;
+
+      // Everything except the facet picks: date window, search, saved tags.
+      // Facet counts are drawn from this set, so they always describe the results.
+      let base;
       if (currentDays === null) {
-        filtered = allArticles.slice(); // all
+        base = allArticles.slice(); // all
       } else {
         const cutoff = new Date(Date.now() - currentDays * 86400000);
-        filtered = allArticles.filter(a => a.date >= cutoff);
-      }
-
-      // Build summary from date-filtered results (before keyword filter)
-      const summary = buildSummary(filtered);
-
-      // Apply keyword/topic filter (from dropdown or summary tag click)
-      if (currentFilter !== 'all') {
-        const kw = currentFilter.toLowerCase();
-        filtered = filtered.filter(a => (a.tags || '').toLowerCase().includes(kw));
+        base = allArticles.filter(a => a.date >= cutoff);
       }
 
       // Free-text search across headline, tags, source, author
       if (currentQuery) {
         const q = currentQuery.toLowerCase();
-        filtered = filtered.filter(a =>
+        base = base.filter(a =>
           (a.headline + ' ' + (a.tags || '') + ' ' + a.source + ' ' + (a.author || ''))
             .toLowerCase().includes(q));
       }
 
       // Apply user tag filter
       if (currentTagFilter) {
-        filtered = filtered.filter(a => {
+        base = base.filter(a => {
           const tags = userTags[a.headline] || {};
           return !!tags[currentTagFilter];
         });
       }
 
+      renderFacets(base);
+
+      const filtered = base.filter(a => matchesFacets(a, null));
+
       // Sort newest first
       filtered.sort((a, b) => b.date - a.date);
 
-      // Stats
+      // Stats, as a sentence: "86 articles from FT about OpenAI — all time"
       const daysLabel = currentDays === null ? 'all time' : `last ${currentDays} day${currentDays > 1 ? 's' : ''}`;
+      const chip = key =>
+        `<button type="button" class="filter-chip" data-facet="${key}" aria-label="Remove filter: ${escapeHtml(selected[key])}">${escapeHtml(selected[key])}<span class="x" aria-hidden="true">&times;</span></button>`;
+      const about = ['co', 'to'].filter(k => selected[k] !== null).map(chip);
+      const picks = FACETS.filter(f => selected[f.key] !== null).length;
       document.getElementById('statsCount').innerHTML =
         `<strong>${filtered.length}</strong> article${filtered.length !== 1 ? 's' : ''}` +
-        (currentFilter !== 'all' ? ` matching "<strong>${currentFilter}</strong>"` : '') +
+        (selected.pub !== null ? ` from ${chip('pub')}` : '') +
+        (about.length ? ` about ${about.join(' and ')}` : '') +
         ` &mdash; ${daysLabel}` +
-        (currentFilter !== 'all' ? ` &nbsp;<button id="clearFilter" style="background:none;border:1px solid var(--border-light);padding:0.2rem 0.5rem;border-radius:12px;font-size:0.72rem;cursor:pointer;color:var(--text-muted);font-family:inherit;">Clear filter</button>` : '');
-
-      // Render summary tags
-      renderSummary(summary);
+        (picks > 1 ? ` <button type="button" class="clear-filters">Clear all</button>` : '');
 
       // Render cards
       const grid = document.getElementById('newsGrid');
@@ -1796,16 +1808,6 @@
         return;
       }
       grid.innerHTML = filtered.map((a, i) => createCard(a, i)).join('');
-
-      // Clear filter button
-      const clearBtn = document.getElementById('clearFilter');
-      if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-          currentFilter = 'all';
-          document.getElementById('filterSelect').value = 'all';
-          filterAndRender();
-        });
-      }
     }
 
     // ── Event Listeners ──────────────────────────
@@ -1839,12 +1841,6 @@
       setTimeout(function() { e.target.select(); }, 0);
     });
 
-    // Dropdown filter
-    document.getElementById('filterSelect').addEventListener('change', function(e) {
-      currentFilter = e.target.value;
-      filterAndRender();
-    });
-
     let searchTimer = null;
     document.getElementById('searchInput').addEventListener('input', function(e) {
       clearTimeout(searchTimer);
@@ -1854,24 +1850,57 @@
       }, 150);
     });
 
-    // Summary tag clicks (delegated) — sync with dropdown
+    // Facet pills (delegated): one pick per row; tapping the pick again clears it
     document.getElementById('summaryBar').addEventListener('click', function(e) {
-      const tag = e.target.closest('.summary-tag');
-      if (tag) {
-        const keyword = tag.dataset.keyword;
-        if (currentFilter === keyword) {
-          currentFilter = 'all';
-        } else {
-          currentFilter = keyword;
-        }
-        // Sync dropdown
-        const select = document.getElementById('filterSelect');
-        select.value = currentFilter;
-        // If value doesn't exist in dropdown, reset to 'all'
-        if (select.value !== currentFilter) select.value = 'all';
+      const more = e.target.closest('.facet-more');
+      if (more) {
+        const key = more.dataset.facet;
+        facetOpen[key] = !facetOpen[key];
+        document.getElementById('facet-' + key).classList.toggle('open', facetOpen[key]);
+        fitFacetRows();
+        return;
+      }
+      const pill = e.target.closest('.summary-tag');
+      if (pill) {
+        const key = pill.dataset.facet;
+        selected[key] = selected[key] === pill.dataset.value ? null : pill.dataset.value;
         filterAndRender();
       }
     });
+
+    // Chips in the stats line remove their pick; "Clear all" removes every pick
+    document.getElementById('statsCount').addEventListener('click', function(e) {
+      const chip = e.target.closest('.filter-chip');
+      if (chip) {
+        selected[chip.dataset.facet] = null;
+      } else if (e.target.closest('.clear-filters')) {
+        FACETS.forEach(f => { selected[f.key] = null; });
+      } else {
+        return;
+      }
+      filterAndRender();
+    });
+
+    // Re-measure the one-line rows whenever their width changes — a window
+    // resize, or a scrollbar appearing once the cards render — and when the
+    // web font arrives. (The refit runs as its own task, outside the observer
+    // callback, so resizing an expanded row can't trip the observer's loop guard.)
+    let fitWidth = 0;
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(entries => {
+        const w = Math.round(entries[0].contentRect.width);
+        if (w !== fitWidth) {
+          fitWidth = w;
+          setTimeout(fitFacetRows, 0);
+        }
+      }).observe(document.getElementById('summaryBar'));
+    } else {
+      window.addEventListener('resize', fitFacetRows);
+    }
+    if (document.fonts) {
+      document.fonts.ready.then(fitFacetRows);
+      document.fonts.addEventListener('loadingdone', fitFacetRows);
+    }
 
     // ── Load Data (stale-while-revalidate) ───────
     // Switching between Headlines and Voices used to re-fetch and
@@ -1882,7 +1911,7 @@
     const DATA_FRESH_MS = 10 * 60 * 1000; // Google republishes CSVs ~every few minutes
 
     function applyCsv(text) {
-      allArticles = parseCSV(text);
+      allArticles = prepareArticles(parseCSV(text));
       allArticles.sort((a, b) => b.date - a.date);
       filterAndRender();
     }
@@ -1919,7 +1948,7 @@
 
     // ── Demo Mode ────────────────────────────────
     function loadDemo() {
-      allArticles = [
+      allArticles = prepareArticles([
         { date: new Date(), headline: 'NVIDIA unveils next-generation Blackwell Ultra chips for AI training workloads', link: 'https://www.nytimes.com/technology', source: 'NYT', author: '', imageUrl: '', tags: 'NVIDIA, Semiconductors', companies: 'NVIDIA', topics: 'Semiconductors' },
         { date: new Date(Date.now() - 86400000), headline: 'OpenAI raises $10B in latest funding round at record $300B valuation', link: 'https://www.ft.com/technology', source: 'FT', author: '', imageUrl: '', tags: 'OpenAI, AGI', companies: 'OpenAI', topics: 'AGI' },
         { date: new Date(Date.now() - 86400000), headline: 'European Union imposes sweeping new AI regulations targeting deepfakes', link: 'https://www.reuters.com/technology', source: 'Reuters', author: '', imageUrl: '', tags: 'AI Regulation, Deepfakes', companies: '', topics: 'AI Regulation, Deepfakes' },
@@ -1931,7 +1960,7 @@
         { date: new Date(Date.now() - 86400000*5), headline: 'ASML warns of potential impact from expanded US export controls on China', link: 'https://www.ft.com/technology', source: 'FT', author: '', imageUrl: '', tags: 'ASML, Export Controls', companies: 'ASML', topics: 'Export Controls' },
         { date: new Date(Date.now() - 86400000*6), headline: 'Google DeepMind achieves breakthrough in protein structure prediction for drug discovery', link: 'https://www.nytimes.com/technology', source: 'NYT', author: '', imageUrl: '', tags: 'Google DeepMind, AI Healthcare', companies: 'Google DeepMind', topics: 'AI Healthcare' },
         { date: new Date(Date.now() - 86400000*6), headline: 'US Senate introduces bipartisan bill to regulate artificial intelligence in critical infrastructure', link: 'https://venturebeat.com', source: 'VentureBeat', author: '', imageUrl: '', tags: 'AI Regulation, Government Policy', companies: '', topics: 'AI Regulation, Government Policy' },
-      ];
+      ]);
       filterAndRender();
     }
 
