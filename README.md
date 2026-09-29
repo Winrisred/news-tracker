@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.23** (2026-09)
+**Current version: v3.24** (2026-09)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest. (Data-only refreshes — e.g. the Books export — don't bump the version; it tracks the site's code and design.)
 
@@ -86,6 +86,7 @@ news-tracker/
 ├── images/
 │   ├── aisi/                 <- 120 local nature/forest/sea/plants fallbacks (AISI)
 │   ├── general/              <- 180 local abstract/sky/landscape fallbacks (RSS)
+│   ├── nature/               <- 380 local mountain & nature photos (The Economist) + CREDITS.md
 │   └── favicon-*.png         <- Favicons and PWA icons
 ├── data/
 │   └── books.json            <- Books data (written by the arxiu export script)
@@ -106,18 +107,23 @@ Tabs (auto-ordered after each fetch): **Summary** → **All News** → monthly t
 
 ## Sources
 
-- **RSS**: NYT, FT, TechCrunch, The Verge, Ars Technica, VentureBeat, The Guardian, Wired, MIT Tech Review
+- **RSS**: NYT, FT, The Economist, TechCrunch, The Verge, Ars Technica, VentureBeat, The Guardian, Wired, MIT Tech Review
+- **What gets in**: an article is kept when it names a tracked company or topic, *or* when its headline or standfirst is about AI in general ("Can the AI arms race be stopped?") — most AI coverage names neither.
+- **The Economist** has no AI feed, so it comes from its *latest* feed plus six section feeds (leaders, briefing, business, finance & economics, science & technology, international). It starts on 2026-04-01 (`TRACKER_START`), when the tracker itself began, so the publication counts stay comparable; remove the `since` fields for a full backfill of what the feeds hold (about a year).
+- **Pageable feeds** (FT ×2, TechCrunch, Ars Technica, MIT Tech Review) carry a `pages` URL, so **Recover missed stories** can read them back to `TRACKER_START`. NYT, The Guardian, Wired and The Verge can't be paged — their feeds only ever show the last few days.
+- Links are compared without their query string (`linkKey_`): the FT's older feed pages add `?syn-25a6b1a6=1` to links the sheet holds without it.
 - **HTML scraping**: AISI (UK AI Safety Institute blog — no RSS feed available)
 
 ## Features
 
-- **Keyword scoring** — headline match = 3 pts, description match = 1 pt, threshold = 3 (reduces false positives)
+- **Keyword scoring** — headline match = 3 pts, description match = 1 pt, threshold = 3 (reduces false positives). Keywords match whole words (plurals allowed), so "intel" doesn't fire on "intelligence" nor "aws" on "laws"
 - **70+ companies, 25+ topics** tracked across AI labs, Big Tech, chips, cloud, defense, policy, government AI bodies, Chinese tech, etc.
 - **APA 7th-edition citations** auto-generated for every article
 - **Web dashboard** — filter by time period (default: all), by publication × company × topic (three one-line pill rows that combine, with counts that follow every other filter), and by free-text search; saved-tag filters (Key, Research) sync via Google Apps Script
 - **Smart thumbnails** — real images when available; otherwise curated **local** fallback images (no external CDN, no IP leak):
   - **120 nature/forest/sea/plants/landscape photos** for AISI posts
   - **180 abstract/sky/rocks/cliffs/river/lake/beach/stars/sunset/galaxy photos** for RSS posts without images
+  - **380 mountain/lake/forest/river/waterfall/meadow/coast photos** for The Economist (`images/nature/`, CC0 from StockSnap via Openverse, credited in `images/nature/CREDITS.md`) — its feed carries no images and its article pages sit behind a bot check
   - Hash-based deterministic selection with same-render dedup so images hardly ever repeat
 - **PWA** — installable on mobile/desktop, works offline via service worker (network-first for same-origin, browser-handled for cross-origin)
 - **Privacy & security**:
@@ -131,6 +137,8 @@ Tabs (auto-ordered after each fetch): **Summary** → **All News** → monthly t
 - Fetch news now / Setup sheets
 - Create or remove hourly trigger
 - Update summary / Reformat all sheets / Reorder sheet tabs / Backfill authors
+- Remove duplicate rows (one-time repair: keeps the first row per link on every tab)
+- Recover missed stories (backfill from the pageable feeds back to `TRACKER_START`; resumable — if it says "not finished", run it again)
 - Test AISI scrape (debug)
 
 ## Deployment
@@ -147,6 +155,13 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.24** (2026-09) — **The Economist joins Headlines.** It has no AI feed (its AI topic page answers 403), so the tracker reads its *latest* feed plus six section feeds and keeps what is about AI. A plain company/topic filter would have missed most of it: of 157 Economist AI stories since April, 106 — "Can the AI arms race be stopped?", "Prepare for an AI jobs apocalypse" — name no tracked company or topic, so the tracker now also keeps any story whose headline or standfirst is about AI. It starts on 1 April 2026 with the rest of the tracker. Red badge, and its own pool of **380 mountain and nature photos**: the feed carries no images and the article pages sit behind Cloudflare's bot check, and the keyword pools it fell back on hold 6–8 images each, so every card looked the same. The new ones are CC0 photos from StockSnap (found through Openverse), hand-picked for landscapes without people, roads or buildings, cropped to 600×400 and served from the site like the AISI pool.
+
+  **The same rule for every publication, and the missed stories recovered.** The general-AI rule applies to all feeds, not just the Economist's: the other papers had been dropping stories like "AI isn't taking jobs, yet" (FT) or "When can we say AI made a scientific discovery?" (MIT Tech Review) all along — at the time of the change, 11 of the 25 items in the FT's own AI feed. **Recover missed stories** in the menu reads the feeds that can be paged back to 1 April and adds what the sheet lacks: 1,413 stories (FT 722, TechCrunch 512, MIT Tech Review 164, Ars Technica 15), about 170 of them tagged with a company that joined the keyword maps in August. It fetches pages eight at a time, stops well inside Apps Script's 6-minute limit and resumes where it left off. The NYT, Guardian, Wired and Verge feeds only show their last few days, so their past misses are gone. The FT's older pages add `?syn-…` to every link, so links are now compared without their query string — otherwise 265 FT stories would have come in twice; the duplicate cleanup uses the same comparison and also clears 12 FT pairs that had slipped in that way.
+
+  Keywords now match **whole words**. They used to match inside other words, which the Economist's broad section feeds would have made much worse ("laws of war" tagged AWS, "fragile" AGI, "Mamdani" AMD) — and it was already skewing the live data: of 107 rows tagged AWS only 7 have AWS in the headline (the rest have "laws", "lawsuit", "claws"), and likewise 30 of 89 for Intel (the rest mostly "intelligence") and 16 of 72 for AGI ("magic", "imagine", "agile"). A plural ending still counts, and "hyperscaler" joins Data Centers so "hyperscalers" isn't lost. Applies to new articles; stored rows keep their old tags.
+
+  **One fetch at a time.** The Economist's first run brought a 157-article backlog, and the script wrote it one row at a time — minutes of work, long enough for a second run (a second click, or the hourly trigger) to start, read the sheet before the first had finished, and write everything again: 124 stories landed twice. `fetchNews` now takes a script lock and skips if another run holds it, and a batch is written in one insert and one write, so even a backlog takes seconds. **Remove duplicate rows** in the menu cleans up the copies.
 - **v3.23** (2026-09) — **Reading length at a glance.** Every essay's reading time moves up into the byline as a pill on a five-step ink ramp, so a long read is findable while scanning rather than buried in the meta row: a 6-minute note is a pale wash, an 84-minute essay is solid navy. Deliberately monochrome — colour already carries the desk — and the bands come from the corpus itself (median 9 min, p75 18, p90 37), so the darkest band is the genuine long tail, not an arbitrary cutoff. Press items, which carry no length, show no pill.
 
   Also a **Backfill a Substack voice** menu item. Substack's `/feed` carries only the latest ~20 items, so a voice added late joins with a truncated history — and for a prolific voice those 20 slots can be taken up by a daily series, leaving the essays out: Abi Awomosu arrived with 15 challenge posts and just 5 essays. The backfill reads the publication's own public archive API, pages it (a short page is normal and does *not* mean the end), skips anything the sheet already holds, and fetches each post's body so reading times match the live path. It returns newsletter posts only, so a section series stays out. For Abi it recovers 37 essays going back to 23 August 2025.

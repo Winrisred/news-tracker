@@ -1,6 +1,6 @@
 // ============================================================
 // AI & BigTech News Tracker — Google Apps Script
-// Version: v2 (2026-08)
+// Version: v3.24 (2026-09)
 //
 // Sheets:
 //   • "All News"        — every article ever collected
@@ -27,18 +27,47 @@ const SCRAPE_SOURCES = [
 ];
 
 // ── RSS Feeds ───────────────────────────────────────────────
+// An article is kept when it names a company or topic from the maps
+// below, or when its headline or standfirst is about AI in general
+// ("Can the AI arms race be stopped?"): most AI coverage names neither.
+//
+// Optional per-feed fields:
+//   since — ignore items published before this date (ISO string)
+//   pages — URL of page {n} of the feed, for feeds that can be paged
+//           back in time; "Recover missed stories" uses it
+
+// The month the tracker started collecting. Backfills stop here, so every
+// publication covers the same span and the counts on the page compare.
+const TRACKER_START = "2026-04-01";
+
+// The Economist has no AI feed (its topic page answers 403), so it comes
+// from "latest" (every section, ~3 weeks deep) plus the sections that
+// carry most of its AI coverage (~a year deep, so a stalled trigger can
+// catch up).
 
 const RSS_FEEDS = [
   // Major newspapers
   { url: "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml", source: "NYT" },
   { url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", source: "NYT" },
-  { url: "https://www.ft.com/technology?format=rss", source: "FT" },
-  { url: "https://www.ft.com/artificial-intelligence?format=rss", source: "FT" },
+  { url: "https://www.ft.com/technology?format=rss", source: "FT",
+    pages: "https://www.ft.com/technology?format=rss&page={n}" },
+  { url: "https://www.ft.com/artificial-intelligence?format=rss", source: "FT",
+    pages: "https://www.ft.com/artificial-intelligence?format=rss&page={n}" },
+  { url: "https://www.economist.com/latest/rss.xml", source: "The Economist", since: TRACKER_START },
+  { url: "https://www.economist.com/leaders/rss.xml", source: "The Economist", since: TRACKER_START },
+  { url: "https://www.economist.com/briefing/rss.xml", source: "The Economist", since: TRACKER_START },
+  { url: "https://www.economist.com/business/rss.xml", source: "The Economist", since: TRACKER_START },
+  { url: "https://www.economist.com/finance-and-economics/rss.xml", source: "The Economist", since: TRACKER_START },
+  { url: "https://www.economist.com/science-and-technology/rss.xml", source: "The Economist", since: TRACKER_START },
+  { url: "https://www.economist.com/international/rss.xml", source: "The Economist", since: TRACKER_START },
 
   // Tech publications
-  { url: "https://techcrunch.com/category/artificial-intelligence/feed/", source: "TechCrunch" },
+  { url: "https://techcrunch.com/category/artificial-intelligence/feed/", source: "TechCrunch",
+    pages: "https://techcrunch.com/category/artificial-intelligence/feed/?paged={n}" },
   { url: "https://www.theverge.com/rss/index.xml", source: "The Verge" },
-  { url: "https://feeds.arstechnica.com/arstechnica/technology-lab", source: "Ars Technica" },
+  // feeds.arstechnica.com ignores paging; the same feed on the main site honours it
+  { url: "https://feeds.arstechnica.com/arstechnica/technology-lab", source: "Ars Technica",
+    pages: "https://arstechnica.com/information-technology/feed/?paged={n}" },
   { url: "https://venturebeat.com/category/ai/feed/", source: "VentureBeat" },
 
   // Newspapers & magazines
@@ -46,7 +75,8 @@ const RSS_FEEDS = [
   { url: "https://www.wired.com/feed/tag/ai/latest/rss", source: "Wired" },
 
   // AI specific
-  { url: "https://www.technologyreview.com/feed/", source: "MIT Tech Review" },
+  { url: "https://www.technologyreview.com/feed/", source: "MIT Tech Review",
+    pages: "https://www.technologyreview.com/feed/?paged={n}" },
 ];
 
 // ── Companies & Keywords ────────────────────────────────────
@@ -175,7 +205,7 @@ const TOPIC_MAP = {
 
   // Industry Topics
   "Semiconductors": ["semiconductor", "chip war", "chip shortage", "foundry", "fab", "wafer", "nanometer", "process node"],
-  "Data Centers": ["data center", "data centre", "hyperscale", "colocation", "server farm", "cooling system"],
+  "Data Centers": ["data center", "data centre", "hyperscale", "hyperscaler", "colocation", "server farm", "cooling system"],
   "Cloud Computing": ["cloud computing", "cloud infrastructure", "multi-cloud", "hybrid cloud"],
   "Cybersecurity": ["cybersecurity", "cyber attack", "ransomware", "data breach", "hacking", "zero-day"],
   "Robotics": ["robotics", "robot", "humanoid", "automation"],
@@ -196,6 +226,7 @@ const TOPIC_MAP = {
 const SOURCE_COLORS = {
   "FT": "#FFF1E5",
   "NYT": "#F7F7F7",
+  "The Economist": "#E3120B",
   "TechCrunch": "#0A8F08",
   "The Verge": "#E84C3D",
   "Ars Technica": "#FF6600",
@@ -211,7 +242,24 @@ const SOURCE_COLORS = {
 // MAIN: Fetch and store news
 // ============================================================
 
+// One run at a time. A big batch (a new source's backlog) takes a while
+// to write; if the hourly trigger or a second click started another run
+// meanwhile, both read the sheet before either had written and every
+// article went in twice.
 function fetchNews() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) {
+    Logger.log("Another fetch is still running — skipped this one.");
+    return;
+  }
+  try {
+    fetchNews_();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function fetchNews_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var master = getOrCreateSheet_(ss, MASTER_SHEET, getHeaders_());
 
@@ -221,21 +269,16 @@ function fetchNews() {
 
   for (var i = 0; i < RSS_FEEDS.length; i++) {
     var feed = RSS_FEEDS[i];
+    var since = feed.since ? new Date(feed.since) : null;
     try {
       var articles = parseFeed_(feed.url, feed.source);
       for (var j = 0; j < articles.length; j++) {
         var article = articles[j];
-        if (!existingUrls[article.link]) {
-          // Tag with keywords
-          article.companies = matchKeywords_(article, KEYWORD_MAP);
-          article.topics = matchKeywords_(article, TOPIC_MAP);
-          article.tags = article.companies.concat(article.topics).join(", ");
-
-          // Only keep if relevant to AI/BigTech
-          if (article.companies.length > 0 || article.topics.length > 0) {
-            newArticles.push(article);
-            existingUrls[article.link] = true;
-          }
+        var key = linkKey_(article.link);
+        if (since && article.date < since) continue;
+        if (!existingUrls[key] && tagArticle_(article)) {
+          newArticles.push(article);
+          existingUrls[key] = true;
         }
       }
     } catch (e) {
@@ -250,7 +293,8 @@ function fetchNews() {
       var articles = scrapeSource_(scrapeConfig);
       for (var j = 0; j < articles.length; j++) {
         var article = articles[j];
-        if (!existingUrls[article.link]) {
+        var key = linkKey_(article.link);
+        if (!existingUrls[key]) {
           article.companies = matchKeywords_(article, KEYWORD_MAP);
           article.topics = matchKeywords_(article, TOPIC_MAP);
           article.tags = article.companies.concat(article.topics).join(", ");
@@ -263,7 +307,7 @@ function fetchNews() {
               article.tags = "AISI, AI Safety";
             }
             newArticles.push(article);
-            existingUrls[article.link] = true;
+            existingUrls[key] = true;
           }
         }
       }
@@ -277,14 +321,28 @@ function fetchNews() {
     return;
   }
 
+  saveArticles_(ss, master, newArticles);
+  Logger.log("Added " + newArticles.length + " new articles.");
+}
+
+// Tags an RSS article with companies and topics, and says whether it
+// belongs in the tracker: it names one of them, or it is about AI.
+function tagArticle_(article) {
+  article.companies = matchKeywords_(article, KEYWORD_MAP);
+  article.topics = matchKeywords_(article, TOPIC_MAP);
+  article.tags = article.companies.concat(article.topics).join(", ");
+  return article.companies.length > 0 || article.topics.length > 0 || isAboutAi_(article);
+}
+
+function saveArticles_(ss, master, articles) {
   // Sort by date (newest first)
-  newArticles.sort(function(a, b) { return b.date - a.date; });
+  articles.sort(function(a, b) { return b.date - a.date; });
 
   // Write to Master sheet
-  writeArticles_(master, newArticles);
+  writeArticles_(master, articles);
 
   // Write to monthly sheet
-  writeToMonthlySheets_(ss, newArticles);
+  writeToMonthlySheets_(ss, articles);
 
   // Update summary
   updateSummary_(ss, master);
@@ -294,8 +352,124 @@ function fetchNews() {
 
   // Auto-sort and format all sheets
   autoFormatSheets_(ss);
+}
 
-  Logger.log("Added " + newArticles.length + " new articles.");
+
+// ============================================================
+// RECOVER MISSED STORIES (backfill)
+// ============================================================
+// Before v3.24 an article needed a company or topic to be kept, so
+// stories about AI in general were dropped — and so were stories naming
+// a company that joined the keyword maps later. Feeds with `pages` can be
+// read back to TRACKER_START, and this adds whatever the sheet lacks.
+// The other feeds only ever show their last few days.
+//
+// Resumable: it stops well before Apps Script's 6-minute limit, saves
+// what it found, and the next run picks up where it left off.
+
+var BACKFILL_PROGRESS_KEY = "recoverMissedStories";
+var BACKFILL_BATCH = 8;                  // pages fetched in parallel
+var BACKFILL_MAX_PAGE = 200;
+var BACKFILL_BUDGET_MS = 3.5 * 60 * 1000;
+
+function recoverMissedStories() {
+  var ui = SpreadsheetApp.getUi();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) {
+    ui.alert("A fetch is still running. Try again in a minute.");
+    return;
+  }
+
+  var started = Date.now();
+  var props = PropertiesService.getScriptProperties();
+  var progress = JSON.parse(props.getProperty(BACKFILL_PROGRESS_KEY) || '{"feed":0,"page":1}');
+  var feeds = RSS_FEEDS.filter(function(f) { return f.pages; });
+  var since = new Date(TRACKER_START);
+  var found = [], perSource = {}, notes = [];
+
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var master = getOrCreateSheet_(ss, MASTER_SHEET, getHeaders_());
+    var existing = getExistingUrls_(master);
+    var lastFirstKey = null;
+
+    while (progress.feed < feeds.length && Date.now() - started < BACKFILL_BUDGET_MS) {
+      var feed = feeds[progress.feed];
+      var requests = [];
+      for (var n = progress.page; n < progress.page + BACKFILL_BATCH; n++) {
+        requests.push({
+          url: n === 1 ? feed.url : feed.pages.replace("{n}", n),
+          muteHttpExceptions: true,
+          followRedirects: true,
+          headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
+        });
+      }
+      var responses = UrlFetchApp.fetchAll(requests);
+
+      var feedDone = false;
+      for (var r = 0; r < responses.length && !feedDone; r++) {
+        var page = progress.page + r;
+        var code = responses[r].getResponseCode();
+        if (code !== 200) {
+          notes.push(feed.source + " stopped at page " + page + " (HTTP " + code + ")");
+          feedDone = true;
+          break;
+        }
+        var articles;
+        try {
+          articles = parseFeedText_(responses[r].getContentText(), feed.source);
+        } catch (e) {
+          notes.push(feed.source + " stopped at page " + page + " (unreadable)");
+          feedDone = true;
+          break;
+        }
+        // An empty page, or one repeating the last (the paging parameter
+        // ignored), means there is nothing further back
+        if (articles.length === 0) { feedDone = true; break; }
+        var firstKey = linkKey_(articles[0].link);
+        if (firstKey === lastFirstKey) { feedDone = true; break; }
+        lastFirstKey = firstKey;
+
+        for (var j = 0; j < articles.length; j++) {
+          var article = articles[j];
+          if (article.date < since) { feedDone = true; continue; }
+          var key = linkKey_(article.link);
+          if (!existing[key] && tagArticle_(article)) {
+            found.push(article);
+            existing[key] = true;
+            perSource[feed.source] = (perSource[feed.source] || 0) + 1;
+          }
+        }
+        if (page >= BACKFILL_MAX_PAGE) feedDone = true;
+      }
+
+      if (feedDone) {
+        progress = { feed: progress.feed + 1, page: 1 };
+        lastFirstKey = null;
+      } else {
+        progress.page += BACKFILL_BATCH;
+      }
+    }
+
+    if (found.length > 0) saveArticles_(ss, master, found);
+  } finally {
+    lock.releaseLock();
+  }
+
+  var finished = progress.feed >= feeds.length;
+  if (finished) props.deleteProperty(BACKFILL_PROGRESS_KEY);
+  else props.setProperty(BACKFILL_PROGRESS_KEY, JSON.stringify(progress));
+
+  var lines = Object.keys(perSource).map(function(k) { return "  " + k + ": " + perSource[k]; });
+  ui.alert(
+    "Recovered " + found.length + " stories since " + TRACKER_START + " in this run.\n" +
+    (lines.length ? lines.join("\n") + "\n" : "") +
+    (notes.length ? "\n" + notes.join("\n") + "\n" : "") +
+    (finished
+      ? "\nAll done — every pageable feed has been read back to " + TRACKER_START + "."
+      : "\nNot finished yet: run it again to continue (next: " +
+        feeds[progress.feed].source + ", page " + progress.page + ").")
+  );
 }
 
 
@@ -481,20 +655,20 @@ function parseFeed_(url, source) {
       return articles;
     }
 
-    var xml = XmlService.parse(response.getContentText());
-    var root = xml.getRootElement();
-
-    // Handle both RSS and Atom formats
-    if (root.getName() === "rss") {
-      articles = parseRss_(root, source);
-    } else if (root.getName() === "feed") {
-      articles = parseAtom_(root, source);
-    }
+    articles = parseFeedText_(response.getContentText(), source);
   } catch (e) {
     Logger.log("Parse error for " + source + ": " + e.message);
   }
 
   return articles;
+}
+
+// Handles both RSS and Atom formats; throws on XML it cannot parse
+function parseFeedText_(text, source) {
+  var root = XmlService.parse(text).getRootElement();
+  if (root.getName() === "rss") return parseRss_(root, source);
+  if (root.getName() === "feed") return parseAtom_(root, source);
+  return [];
 }
 
 function parseRss_(root, source) {
@@ -641,10 +815,27 @@ function extractImageAtom_(entry, ns) {
 // ============================================================
 // Headline match = 3 points, Description match = 1 point per occurrence
 // Threshold = 3 (headline match alone qualifies, or 3+ description mentions)
+// Keywords match whole words: "intel" must not fire on "intelligence",
+// "aws" on "laws", "agi" on "magic", "amd" on "Mamdani". A plural ending
+// is allowed ("robot" → "robots", "data centre" → "data centres").
 
 var MATCH_THRESHOLD = 3;
 var HEADLINE_WEIGHT = 3;
 var DESCRIPTION_WEIGHT = 1;
+
+var keywordRegexCache_ = {};
+
+function keywordRegex_(kw) {
+  var re = keywordRegexCache_[kw];
+  if (!re) {
+    var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // "gpt-" ends in a separator on purpose, so it takes no word end
+    var end = /[a-z0-9]$/.test(kw) ? "(?:s|es)?(?![a-z0-9])" : "";
+    re = new RegExp("(?:^|[^a-z0-9])" + escaped + end, "g");
+    keywordRegexCache_[kw] = re;
+  }
+  return re;
+}
 
 function matchKeywords_(article, keywordMap) {
   var headline = (article.headline || "").toLowerCase();
@@ -656,21 +847,18 @@ function matchKeywords_(article, keywordMap) {
     var score = 0;
 
     for (var i = 0; i < keywords.length; i++) {
-      var kw = keywords[i].toLowerCase();
+      var re = keywordRegex_(keywords[i].toLowerCase());
 
       // Headline match (strong signal)
-      if (headline.indexOf(kw) >= 0) {
+      re.lastIndex = 0;
+      if (re.test(headline)) {
         score += HEADLINE_WEIGHT;
       }
 
       // Description matches (count occurrences)
-      var descIdx = 0;
-      var descText = description;
-      while (descIdx < descText.length) {
-        var found = descText.indexOf(kw, descIdx);
-        if (found < 0) break;
-        score += DESCRIPTION_WEIGHT;
-        descIdx = found + kw.length;
+      var found = description.match(re);
+      if (found) {
+        score += found.length * DESCRIPTION_WEIGHT;
       }
     }
 
@@ -680,6 +868,14 @@ function matchKeywords_(article, keywordMap) {
   }
 
   return matched;
+}
+
+// A story about AI in general. Headline or standfirst: the FT and The
+// Economist often put the AI angle in the standfirst.
+var AI_STORY_PATTERN = /(?:^|[^a-z0-9])(?:ai|ais|a\.i\.|artificial intelligence|machine learning|chatbots?)(?![a-z0-9])/;
+
+function isAboutAi_(article) {
+  return AI_STORY_PATTERN.test((article.headline + " " + article.description).toLowerCase());
 }
 
 
@@ -700,11 +896,14 @@ function buildApaCitation_(article) {
   return citation;
 }
 
+// The whole batch in one insert and one write: row by row, a backlog of
+// ~150 articles took minutes.
 function writeArticles_(sheet, articles) {
+  if (articles.length === 0) return;
+  var rows = [];
   for (var i = 0; i < articles.length; i++) {
     var a = articles[i];
-    sheet.insertRowAfter(1);
-    sheet.getRange(2, 1, 1, 10).setValues([[
+    rows.push([
       a.date,
       a.headline,
       a.link,
@@ -715,8 +914,10 @@ function writeArticles_(sheet, articles) {
       a.topics.join(", "),
       a.tags,
       buildApaCitation_(a)
-    ]]);
+    ]);
   }
+  sheet.insertRowsAfter(1, rows.length);
+  sheet.getRange(2, 1, rows.length, 10).setValues(rows);
 }
 
 function writeToMonthlySheets_(ss, articles) {
@@ -848,9 +1049,16 @@ function getExistingUrls_(sheet) {
   var linkCol = 3; // Column C = Link
   var data = sheet.getRange(2, linkCol, lastRow - 1, 1).getValues();
   for (var i = 0; i < data.length; i++) {
-    if (data[i][0]) urls[data[i][0]] = true;
+    if (data[i][0]) urls[linkKey_(data[i][0])] = true;
   }
   return urls;
+}
+
+// Links are compared without query string, fragment or trailing slash:
+// the FT's older feed pages add "?syn-25a6b1a6=1" to links the sheet
+// already holds without it.
+function linkKey_(url) {
+  return String(url || "").split("#")[0].split("?")[0].replace(/\/+$/, "").toLowerCase();
 }
 
 function trimSheet_(sheet, maxRows) {
@@ -1118,6 +1326,8 @@ function onOpen() {
     .addItem("Reorder sheet tabs", "reorderSheetsManual")
     .addItem("Backfill authors", "backfillAuthors")
     .addItem("Cleanup false AISI tags", "cleanupAisiFalsePositives")
+    .addItem("Remove duplicate rows", "removeDuplicateRows")
+    .addItem("Recover missed stories", "recoverMissedStories")
     .addSeparator()
     .addItem("Test AISI scrape (debug)", "testAisiScrape")
     .addToUi();
@@ -1182,6 +1392,65 @@ function cleanupAisiFalsePositives() {
     "Rows fixed (false AISI tag removed): " + cleaned + "\n" +
     "Rows deleted (no other tags left): " + deleted + "\n\n" +
     "Counts include monthly-tab copies of the same article."
+  );
+}
+
+// One-time repair: two overlapping fetches (possible before the lock in
+// fetchNews) could write the same batch twice, and the FT's two link
+// formats let a few stories in twice. On every tab, keeps the first row
+// for each link and drops later copies, plus fully blank rows left by a
+// run that stopped halfway.
+function removeDuplicateRows() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) {
+    SpreadsheetApp.getUi().alert("A fetch is still running. Try again in a minute.");
+    return;
+  }
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheets = ss.getSheets();
+    var removed = 0, tabs = 0;
+
+    for (var s = 0; s < sheets.length; s++) {
+      var sheet = sheets[s];
+      if (sheet.getName() === SUMMARY_SHEET) continue;
+      var lastRow = sheet.getLastRow();
+      var lastCol = sheet.getLastColumn();
+      if (lastRow < 3) continue;
+
+      var linkCol = sheet.getRange(1, 1, 1, lastCol).getValues()[0].indexOf("Link");
+      if (linkCol < 0) continue;
+
+      var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+      var seen = {}, kept = [];
+      for (var r = 0; r < data.length; r++) {
+        var link = linkKey_(data[r][linkCol]);
+        if (data[r].join("") === "") continue;
+        if (link && seen[link]) continue;
+        if (link) seen[link] = true;
+        kept.push(data[r]);
+      }
+
+      var drop = data.length - kept.length;
+      if (drop === 0 || kept.length === 0) continue;
+      sheet.getRange(2, 1, data.length, lastCol).clearContent();
+      sheet.getRange(2, 1, kept.length, lastCol).setValues(kept);
+      sheet.deleteRows(kept.length + 2, drop);
+      removed += drop;
+      tabs++;
+    }
+
+    autoFormatSheets_(ss);
+    var master = ss.getSheetByName(MASTER_SHEET);
+    if (master) updateSummary_(ss, master);
+  } finally {
+    lock.releaseLock();
+  }
+
+  SpreadsheetApp.getUi().alert(
+    "Duplicate cleanup complete.\n\n" +
+    "Rows removed: " + removed + " (across " + tabs + " tabs, " +
+    "counting monthly-tab copies)."
   );
 }
 

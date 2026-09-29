@@ -965,7 +965,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.23</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.24</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -1274,8 +1274,16 @@
       `images/aisi/aisi-${String(i + 1).padStart(3, '0')}.jpg`
     );
 
+    // Mountains and nature for The Economist: its feed carries no images and
+    // its article pages sit behind a bot check, so there is nothing to borrow.
+    // 380 CC0 photos (StockSnap via Openverse), credited in images/nature/CREDITS.md
+    const NATURE_IMAGES = Array.from({length: 380}, (_, i) =>
+      `images/nature/nature-${String(i + 1).padStart(3, '0')}.jpg`
+    );
+
     const SOURCE_IMAGES = {
       'AISI': AISI_NATURE_IMAGES,
+      'The Economist': NATURE_IMAGES,
     };
 
     // General fallback (no keyword matched) — local abstract/texture/sky/rocks/cliffs/river/lake/beach/stars/sunset/universe/wildflowers/field/meadow/countryside/night sky/moon/galaxy images, no IP leak
@@ -1325,6 +1333,7 @@
     const SOURCE_TINTS = {
       'FT':             'rgba(255, 200, 150, 0.35)',
       'NYT':            'rgba(180, 180, 200, 0.2)',
+      'The Economist':  'rgba(227, 18, 11, 0.2)',
       'TechCrunch':     'rgba(10, 180, 10, 0.2)',
       'The Verge':      'rgba(232, 76, 61, 0.2)',
       'Ars Technica':   'rgba(255, 120, 0, 0.2)',
@@ -1340,6 +1349,7 @@
     const SOURCE_BADGE = {
       'FT':              { bg: '#FCD9B6', color: '#33200a' },
       'NYT':             { bg: '#f0f0f0', color: '#111' },
+      'The Economist':   { bg: '#E3120B', color: '#fff' },
       'TechCrunch':      { bg: '#0A8F08', color: '#fff' },
       'The Verge':       { bg: '#E84C3D', color: '#fff' },
       'Ars Technica':    { bg: '#FF6600', color: '#fff' },
