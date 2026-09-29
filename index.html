@@ -965,7 +965,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.24</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.25</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -1281,9 +1281,18 @@
       `images/nature/nature-${String(i + 1).padStart(3, '0')}.jpg`
     );
 
+    // Sea, deserts, skies, fields and forests for the FT: same story — no
+    // images in the feed, a bot check on the pages. Kept apart from the
+    // Economist's pool so the two papers never share a photo on screen.
+    // 400 CC0 photos (StockSnap via Openverse), credited in images/landscapes/CREDITS.md
+    const LANDSCAPE_IMAGES = Array.from({length: 400}, (_, i) =>
+      `images/landscapes/landscapes-${String(i + 1).padStart(3, '0')}.jpg`
+    );
+
     const SOURCE_IMAGES = {
       'AISI': AISI_NATURE_IMAGES,
       'The Economist': NATURE_IMAGES,
+      'FT': LANDSCAPE_IMAGES,
     };
 
     // General fallback (no keyword matched) — local abstract/texture/sky/rocks/cliffs/river/lake/beach/stars/sunset/universe/wildflowers/field/meadow/countryside/night sky/moon/galaxy images, no IP leak
@@ -1640,7 +1649,7 @@
             <span class="source-badge" style="background:${badge.bg};color:${badge.color}">${escapeHtml(article.source)}</span>
           </div>`;
       } else {
-        imageHtml = generateFallbackHtml(article.headline, article.source);
+        imageHtml = generateFallbackHtml(article.source, fallbackImg);
       }
 
       // Validate link: only allow http(s). Reject javascript: and other non-navigable schemes.
@@ -1666,10 +1675,11 @@
         </a>`;
     }
 
-    function generateFallbackHtml(headline, source) {
+    // Takes the image createCard already picked: picking again here spent two
+    // slots of the no-repeat pool per card, so photos came back after half of it.
+    function generateFallbackHtml(source, imgUrl) {
       const badge = SOURCE_BADGE[source] || { bg: '#333', color: '#fff' };
       const tint = SOURCE_TINTS[source] || 'rgba(12, 27, 42, 0.2)';
-      const imgUrl = pickImageForHeadline(headline, source);
       return `
         <div class="card-image">
           <img src="${escapeHtml(imgUrl)}" alt="" loading="lazy">

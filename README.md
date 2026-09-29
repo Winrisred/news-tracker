@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.24** (2026-09)
+**Current version: v3.25** (2026-09)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest. (Data-only refreshes — e.g. the Books export — don't bump the version; it tracks the site's code and design.)
 
@@ -87,6 +87,7 @@ news-tracker/
 │   ├── aisi/                 <- 120 local nature/forest/sea/plants fallbacks (AISI)
 │   ├── general/              <- 180 local abstract/sky/landscape fallbacks (RSS)
 │   ├── nature/               <- 380 local mountain & nature photos (The Economist) + CREDITS.md
+│   ├── landscapes/           <- 400 local sea/desert/sky/field/forest photos (FT) + CREDITS.md
 │   └── favicon-*.png         <- Favicons and PWA icons
 ├── data/
 │   └── books.json            <- Books data (written by the arxiu export script)
@@ -124,6 +125,7 @@ Tabs (auto-ordered after each fetch): **Summary** → **All News** → monthly t
   - **120 nature/forest/sea/plants/landscape photos** for AISI posts
   - **180 abstract/sky/rocks/cliffs/river/lake/beach/stars/sunset/galaxy photos** for RSS posts without images
   - **380 mountain/lake/forest/river/waterfall/meadow/coast photos** for The Economist (`images/nature/`, CC0 from StockSnap via Openverse, credited in `images/nature/CREDITS.md`) — its feed carries no images and its article pages sit behind a bot check
+  - **400 sea/coast/desert/sky/autumn/field/river/forest photos** for the FT (`images/landscapes/`, same source and licence, credited in `images/landscapes/CREDITS.md`) — same reasons; kept apart from the Economist's pool so the two papers never share a photo
   - Hash-based deterministic selection with same-render dedup so images hardly ever repeat
 - **PWA** — installable on mobile/desktop, works offline via service worker (network-first for same-origin, browser-handled for cross-origin)
 - **Privacy & security**:
@@ -155,6 +157,9 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.25** (2026-09) — **The FT gets its own photos.** Like the Economist, the FT's feed carries no images and its article pages sit behind a bot check ("Security Verification"), so every FT card fell back on the keyword pools of 6–8 images — and with the missed-story recovery the FT is heading for ~1,400 stories. It now has a pool of 400 CC0 photos (StockSnap via Openverse, hand-picked the same way: no people, roads or buildings) weighted towards sea and coast, deserts and canyons, skies, autumn, fields and forests, so FT and Economist cards read differently at a glance. Separate from every other pool — no photo appears in two — so the page's no-repeat rule gives 400 FT cards in a row before any image comes back.
+
+  Also fixes why photos came back so soon in *every* pool: a card without its own image drew a fallback photo, discarded it, and drew another — two slots of the no-repeat pool per card, so repeats started halfway through (card 191 of the Economist's 380, card 201 of the FT's 400). Each card now draws once. That doubles the effective size of every pool, the AISI and keyword ones included.
 - **v3.24** (2026-09) — **The Economist joins Headlines.** It has no AI feed (its AI topic page answers 403), so the tracker reads its *latest* feed plus six section feeds and keeps what is about AI. A plain company/topic filter would have missed most of it: of 157 Economist AI stories since April, 106 — "Can the AI arms race be stopped?", "Prepare for an AI jobs apocalypse" — name no tracked company or topic, so the tracker now also keeps any story whose headline or standfirst is about AI. It starts on 1 April 2026 with the rest of the tracker. Red badge, and its own pool of **380 mountain and nature photos**: the feed carries no images and the article pages sit behind Cloudflare's bot check, and the keyword pools it fell back on hold 6–8 images each, so every card looked the same. The new ones are CC0 photos from StockSnap (found through Openverse), hand-picked for landscapes without people, roads or buildings, cropped to 600×400 and served from the site like the AISI pool.
 
   **The same rule for every publication, and the missed stories recovered.** The general-AI rule applies to all feeds, not just the Economist's: the other papers had been dropping stories like "AI isn't taking jobs, yet" (FT) or "When can we say AI made a scientific discovery?" (MIT Tech Review) all along — at the time of the change, 11 of the 25 items in the FT's own AI feed. **Recover missed stories** in the menu reads the feeds that can be paged back to 1 April and adds what the sheet lacks: 1,413 stories (FT 722, TechCrunch 512, MIT Tech Review 164, Ars Technica 15), about 170 of them tagged with a company that joined the keyword maps in August. It fetches pages eight at a time, stops well inside Apps Script's 6-minute limit and resumes where it left off. The NYT, Guardian, Wired and Verge feeds only show their last few days, so their past misses are gone. The FT's older pages add `?syn-…` to every link, so links are now compared without their query string — otherwise 265 FT stories would have come in twice; the duplicate cleanup uses the same comparison and also clears 12 FT pairs that had slipped in that way.
