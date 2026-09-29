@@ -1,6 +1,6 @@
 // ============================================================
 // AI & BigTech News Tracker — Google Apps Script
-// Version: v3.24 (2026-09)
+// Version: v3.27 (2026-09)
 //
 // Sheets:
 //   • "All News"        — every article ever collected
@@ -364,19 +364,22 @@ function saveArticles_(ss, master, articles) {
 // read back to TRACKER_START, and this adds whatever the sheet lacks.
 // The other feeds only ever show their last few days.
 //
-// Resumable: it stops well before Apps Script's 6-minute limit, saves
-// what it found, and the next run picks up where it left off.
+// Resumable: it stops fetching after 2.5 minutes, leaving the rest of
+// Apps Script's 6-minute limit for saving, and the next run picks up
+// where it left off. It reports in the execution log and a sheet toast,
+// never a popup: an alert waits for a click in the *sheet* tab, and a
+// run left waiting there hits the 6-minute limit ("Exceeded maximum
+// execution time") although its work is done.
 
 var BACKFILL_PROGRESS_KEY = "recoverMissedStories";
 var BACKFILL_BATCH = 8;                  // pages fetched in parallel
 var BACKFILL_MAX_PAGE = 200;
-var BACKFILL_BUDGET_MS = 3.5 * 60 * 1000;
+var BACKFILL_BUDGET_MS = 2.5 * 60 * 1000;
 
 function recoverMissedStories() {
-  var ui = SpreadsheetApp.getUi();
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) {
-    ui.alert("A fetch is still running. Try again in a minute.");
+    report_("A fetch is still running. Try again in a minute.");
     return;
   }
 
@@ -452,24 +455,86 @@ function recoverMissedStories() {
     }
 
     if (found.length > 0) saveArticles_(ss, master, found);
+
+    // Progress moves on only once what it covers is saved
+    var finished = progress.feed >= feeds.length;
+    if (finished) props.deleteProperty(BACKFILL_PROGRESS_KEY);
+    else props.setProperty(BACKFILL_PROGRESS_KEY, JSON.stringify(progress));
   } finally {
     lock.releaseLock();
   }
 
-  var finished = progress.feed >= feeds.length;
-  if (finished) props.deleteProperty(BACKFILL_PROGRESS_KEY);
-  else props.setProperty(BACKFILL_PROGRESS_KEY, JSON.stringify(progress));
-
   var lines = Object.keys(perSource).map(function(k) { return "  " + k + ": " + perSource[k]; });
-  ui.alert(
+  report_(
     "Recovered " + found.length + " stories since " + TRACKER_START + " in this run.\n" +
     (lines.length ? lines.join("\n") + "\n" : "") +
-    (notes.length ? "\n" + notes.join("\n") + "\n" : "") +
+    (notes.length ? notes.join("\n") + "\n" : "") +
     (finished
-      ? "\nAll done — every pageable feed has been read back to " + TRACKER_START + "."
-      : "\nNot finished yet: run it again to continue (next: " +
+      ? "All done — every pageable feed has been read back to " + TRACKER_START + "."
+      : "Not finished yet: run it again to continue (next: " +
         feeds[progress.feed].source + ", page " + progress.page + ").")
   );
+}
+
+// Results of the long-running repairs: the execution log (what the editor
+// shows while it runs) plus a toast in the sheet, which never blocks.
+function report_(message) {
+  Logger.log(message);
+  try {
+    SpreadsheetApp.getActiveSpreadsheet().toast(message.split("\n")[0], "News Tracker", 15);
+  } catch (e) {}
+}
+
+
+// ============================================================
+// SYNC MONTHLY TABS (repair)
+// ============================================================
+// Makes every month tab hold every "All News" row of its month. A run cut
+// off by the 6-minute limit can leave All News written but a month tab
+// short; this adds whatever is missing and never duplicates (links are
+// compared the same way as everywhere else). Safe to run any time: when
+// nothing is missing it changes nothing and says so.
+
+function syncMonthlyTabs() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) {
+    report_("A fetch is still running. Try again in a minute.");
+    return;
+  }
+  var added = 0, tabs = [];
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var master = ss.getSheetByName(MASTER_SHEET);
+    var lastRow = master ? master.getLastRow() : 0;
+    if (lastRow < 2) { report_("All News is empty — nothing to sync."); return; }
+
+    var tz = Session.getScriptTimeZone();
+    var byMonth = {};
+    var data = master.getRange(2, 1, lastRow - 1, 10).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var date = data[i][0] instanceof Date ? data[i][0] : new Date(data[i][0]);
+      if (!data[i][2] || isNaN(date.getTime())) continue;
+      var month = Utilities.formatDate(date, tz, "yyyy-MM");
+      (byMonth[month] = byMonth[month] || []).push(data[i]);
+    }
+
+    for (var month in byMonth) {
+      var sheet = getOrCreateSheet_(ss, month, getHeaders_());
+      var have = getExistingUrls_(sheet);
+      var missing = byMonth[month].filter(function(row) { return !have[linkKey_(row[2])]; });
+      if (missing.length === 0) continue;
+      sheet.insertRowsAfter(1, missing.length);
+      sheet.getRange(2, 1, missing.length, 10).setValues(missing);
+      added += missing.length;
+      tabs.push(month + " +" + missing.length);
+    }
+    if (added > 0) autoFormatSheets_(ss);
+  } finally {
+    lock.releaseLock();
+  }
+  report_(added === 0
+    ? "Monthly tabs already match All News — nothing was missing."
+    : "Added " + added + " rows missing from the monthly tabs.\n  " + tabs.join("\n  "));
 }
 
 
@@ -1328,6 +1393,7 @@ function onOpen() {
     .addItem("Cleanup false AISI tags", "cleanupAisiFalsePositives")
     .addItem("Remove duplicate rows", "removeDuplicateRows")
     .addItem("Recover missed stories", "recoverMissedStories")
+    .addItem("Sync monthly tabs", "syncMonthlyTabs")
     .addSeparator()
     .addItem("Test AISI scrape (debug)", "testAisiScrape")
     .addToUi();
@@ -1403,7 +1469,7 @@ function cleanupAisiFalsePositives() {
 function removeDuplicateRows() {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) {
-    SpreadsheetApp.getUi().alert("A fetch is still running. Try again in a minute.");
+    report_("A fetch is still running. Try again in a minute.");
     return;
   }
   try {
@@ -1447,10 +1513,9 @@ function removeDuplicateRows() {
     lock.releaseLock();
   }
 
-  SpreadsheetApp.getUi().alert(
-    "Duplicate cleanup complete.\n\n" +
-    "Rows removed: " + removed + " (across " + tabs + " tabs, " +
-    "counting monthly-tab copies)."
+  report_(
+    "Duplicate cleanup complete. Rows removed: " + removed + " (across " + tabs +
+    " tabs, counting monthly-tab copies)."
   );
 }
 
