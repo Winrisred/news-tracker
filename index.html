@@ -965,7 +965,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.25</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.26</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -1289,10 +1289,26 @@
       `images/landscapes/landscapes-${String(i + 1).padStart(3, '0')}.jpg`
     );
 
+    // Night sky, space, aurora, storms and ice for MIT Tech Review, whose feed
+    // carries no images either. 249 photos: CC0 from StockSnap, plus NASA
+    // public-domain space images via rawpixel; credited in images/elements/CREDITS.md
+    const ELEMENTS_IMAGES = Array.from({length: 249}, (_, i) =>
+      `images/elements/elements-${String(i + 1).padStart(3, '0')}.jpg`
+    );
+
+    // Leaves, ferns, moss, blossom and wildlife for TechCrunch (its brand
+    // green), whose feed carries no images. 587 CC0 photos (StockSnap via
+    // Openverse), credited in images/green/CREDITS.md
+    const GREEN_IMAGES = Array.from({length: 587}, (_, i) =>
+      `images/green/green-${String(i + 1).padStart(3, '0')}.jpg`
+    );
+
     const SOURCE_IMAGES = {
       'AISI': AISI_NATURE_IMAGES,
       'The Economist': NATURE_IMAGES,
       'FT': LANDSCAPE_IMAGES,
+      'MIT Tech Review': ELEMENTS_IMAGES,
+      'TechCrunch': GREEN_IMAGES,
     };
 
     // General fallback (no keyword matched) — local abstract/texture/sky/rocks/cliffs/river/lake/beach/stars/sunset/universe/wildflowers/field/meadow/countryside/night sky/moon/galaxy images, no IP leak
