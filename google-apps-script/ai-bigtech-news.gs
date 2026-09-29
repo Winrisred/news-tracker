@@ -1,6 +1,6 @@
 // ============================================================
 // AI & BigTech News Tracker — Google Apps Script
-// Version: v3.27 (2026-09)
+// Version: v3.28 (2026-09)
 //
 // Sheets:
 //   • "All News"        — every article ever collected
@@ -216,7 +216,9 @@ const TOPIC_MAP = {
   "Government Policy": ["executive order", "white house ai", "congress ai", "senate ai", "eu commission", "china ai policy"],
   "Export Controls": ["export control", "chip ban", "sanctions semiconductor", "trade war tech"],
   "Antitrust": ["antitrust", "monopoly", "competition law", "breakup tech", "market dominance"],
-  "Privacy": ["data privacy", "gdpr", "surveillance", "facial recognition", "tracking"],
+  // Not bare "tracking": it tagged motion-tracking toothbrushes, head-tracking
+  // headphones and missile-tracking satellites as privacy stories
+  "Privacy": ["privacy", "gdpr", "surveillance", "facial recognition", "location tracking", "phone tracking", "online tracking", "ad tracking"],
   "Jobs & Labor": ["job displacement", "automation jobs", "ai replace", "workforce ai", "layoff tech", "hiring ai"],
   "Misinformation": ["misinformation", "disinformation", "fake news", "election ai", "propaganda ai"],
 };
@@ -882,7 +884,8 @@ function extractImageAtom_(entry, ns) {
 // Threshold = 3 (headline match alone qualifies, or 3+ description mentions)
 // Keywords match whole words: "intel" must not fire on "intelligence",
 // "aws" on "laws", "agi" on "magic", "amd" on "Mamdani". A plural ending
-// is allowed ("robot" → "robots", "data centre" → "data centres").
+// is allowed ("robot" → "robots", "data centre" → "data centres"), and a
+// space also matches a hyphen ("open-source AI", "phone-tracking").
 
 var MATCH_THRESHOLD = 3;
 var HEADLINE_WEIGHT = 3;
@@ -893,7 +896,7 @@ var keywordRegexCache_ = {};
 function keywordRegex_(kw) {
   var re = keywordRegexCache_[kw];
   if (!re) {
-    var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "[\\s-]");
     // "gpt-" ends in a separator on purpose, so it takes no word end
     var end = /[a-z0-9]$/.test(kw) ? "(?:s|es)?(?![a-z0-9])" : "";
     re = new RegExp("(?:^|[^a-z0-9])" + escaped + end, "g");
@@ -1394,6 +1397,7 @@ function onOpen() {
     .addItem("Remove duplicate rows", "removeDuplicateRows")
     .addItem("Recover missed stories", "recoverMissedStories")
     .addItem("Sync monthly tabs", "syncMonthlyTabs")
+    .addItem("Fix Privacy tags", "fixPrivacyTags")
     .addSeparator()
     .addItem("Test AISI scrape (debug)", "testAisiScrape")
     .addToUi();
@@ -1517,6 +1521,84 @@ function removeDuplicateRows() {
     "Duplicate cleanup complete. Rows removed: " + removed + " (across " + tabs +
     " tabs, counting monthly-tab copies)."
   );
+}
+
+// One-time repair for the v3.28 Privacy keywords, on All News and every
+// month tab, judged from the headline (descriptions aren't stored):
+//   - removes Privacy where the headline only matched the old bare
+//     "tracking" (toothbrushes, headphones, missile-tracking…)
+//   - adds Privacy where the headline names privacy
+//   - deletes a row left with no company, no topic and no AI in its
+//     headline: it only got in through the false tag
+function fixPrivacyTags() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) {
+    report_("A fetch is still running. Try again in a minute.");
+    return;
+  }
+  var removed = 0, added = 0, deleted = [];
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheets = ss.getSheets();
+    var monthRegex = /^\d{4}-\d{2}$/;
+    var privacyOnly = { "Privacy": TOPIC_MAP["Privacy"] };
+
+    for (var s = 0; s < sheets.length; s++) {
+      var sheet = sheets[s];
+      var name = sheet.getName();
+      if (name !== MASTER_SHEET && !monthRegex.test(name)) continue;
+      var lastRow = sheet.getLastRow();
+      if (lastRow <= 1) continue;
+
+      var data = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+      var topicsCol = [], tagsCol = [], toDelete = [], changed = false;
+
+      for (var i = 0; i < data.length; i++) {
+        var headline = String(data[i][1] || "");
+        var companies = splitTags_(data[i][6]);
+        var topics = splitTags_(data[i][7]);
+        var article = { headline: headline, description: "" };
+        var named = matchKeywords_(article, privacyOnly).length > 0;
+        var has = topics.indexOf("Privacy") >= 0;
+
+        if (has && !named && /(^|[^a-z0-9])tracking/i.test(headline)) {
+          topics.splice(topics.indexOf("Privacy"), 1);
+          changed = true;
+          if (name === MASTER_SHEET) removed++;
+          if (companies.length === 0 && topics.length === 0 && !isAboutAi_(article)) {
+            toDelete.push(i + 2);
+            if (name === MASTER_SHEET) deleted.push(headline);
+          }
+        } else if (!has && named) {
+          topics.push("Privacy");
+          changed = true;
+          if (name === MASTER_SHEET) added++;
+        }
+        topicsCol.push([topics.join(", ")]);
+        tagsCol.push([companies.concat(topics).join(", ")]);
+      }
+
+      if (!changed) continue;
+      sheet.getRange(2, 8, data.length, 1).setValues(topicsCol);
+      sheet.getRange(2, 9, data.length, 1).setValues(tagsCol);
+      for (var d = toDelete.length - 1; d >= 0; d--) sheet.deleteRow(toDelete[d]);
+    }
+
+    var master = ss.getSheetByName(MASTER_SHEET);
+    if (master) updateSummary_(ss, master);
+  } finally {
+    lock.releaseLock();
+  }
+  report_(
+    "Privacy tags fixed in All News: " + removed + " removed, " + added + " added, " +
+    deleted.length + " rows deleted (monthly tabs updated to match)." +
+    (deleted.length ? "\nDeleted:\n  " + deleted.join("\n  ") : "")
+  );
+}
+
+function splitTags_(value) {
+  return String(value || "").split(",").map(function(t) { return t.trim(); })
+    .filter(function(t) { return t; });
 }
 
 function removeTag_(list, tag) {

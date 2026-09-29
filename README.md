@@ -1,6 +1,6 @@
 # AI & BigTech News Tracker
 
-**Current version: v3.27** (2026-09)
+**Current version: v3.28** (2026-09)
 
 Versioning rule: every pushed change set bumps the minor version. The badge next to "News Tracker" in the page header always shows the deployed version — if the badge matches this number, you're seeing the latest. (Data-only refreshes — e.g. the Books export — don't bump the version; it tracks the site's code and design.)
 
@@ -119,7 +119,7 @@ Tabs (auto-ordered after each fetch): **Summary** → **All News** → monthly t
 
 ## Features
 
-- **Keyword scoring** — headline match = 3 pts, description match = 1 pt, threshold = 3 (reduces false positives). Keywords match whole words (plurals allowed), so "intel" doesn't fire on "intelligence" nor "aws" on "laws"
+- **Keyword scoring** — headline match = 3 pts, description match = 1 pt, threshold = 3 (reduces false positives). Keywords match whole words (plurals allowed, and a space also matches a hyphen), so "intel" doesn't fire on "intelligence" nor "aws" on "laws", while "open source AI" still finds "open-source AI"
 - **70+ companies, 25+ topics** tracked across AI labs, Big Tech, chips, cloud, defense, policy, government AI bodies, Chinese tech, etc.
 - **APA 7th-edition citations** auto-generated for every article
 - **Web dashboard** — filter by time period (default: all), by publication × company × topic (three one-line pill rows that combine, with counts that follow every other filter), and by free-text search; saved-tag filters (Key, Research) sync via Google Apps Script
@@ -146,8 +146,9 @@ Tabs (auto-ordered after each fetch): **Summary** → **All News** → monthly t
 - Remove duplicate rows (one-time repair: keeps the first row per link on every tab)
 - Recover missed stories (backfill from the pageable feeds back to `TRACKER_START`; resumable — if it says "not finished", run it again)
 - Sync monthly tabs (repair: adds any All News row missing from its month tab; changes nothing when they already match)
+- Fix Privacy tags (one-time repair for the v3.28 Privacy keywords; see the version history)
 
-The three repairs above report in the editor's **execution log** and a toast in the sheet, never a popup: a popup waits for a click in the sheet tab, and a run left waiting there ends with "Exceeded maximum execution time" although its work is done. The older menu items still use popups — click OK in the sheet tab.
+The repairs above report in the editor's **execution log** and a toast in the sheet, never a popup: a popup waits for a click in the sheet tab, and a run left waiting there ends with "Exceeded maximum execution time" although its work is done. The older menu items still use popups — click OK in the sheet tab.
 - Test AISI scrape (debug)
 
 ## Deployment
@@ -164,6 +165,7 @@ The `.gs` files in this repo are the local source of truth. If a Google Sheet is
 
 ## Version history
 
+- **v3.28** (2026-09) — **Privacy means privacy.** The Privacy topic's bare "tracking" keyword tagged motion-tracking toothbrushes, head-tracking headphones, missile-tracking satellites, a ship-tracking app and an Economist piece on *tracking the cost of tariffs* — 11 of its 39 stories. It is replaced by "location / phone / online / ad tracking", and the topic gains plain "privacy" (it only knew "data privacy"), which catches stories it had missed: TikTok's child-privacy settlement, Microsoft's AI privacy rules for schools, OpenAI's customer privacy protections. Keywords now also match across a hyphen, so "phone tracking" finds "phone-tracking" — which also fixes "open-source AI", "vibe-coding", "data-centre" and "cyber-attack", missed until now (checked on every stored headline: 16 correct new tags, no false ones). **Fix Privacy tags** in the menu applies this to stored rows: removes the 11 noise tags, adds Privacy to 13 headlines that name privacy, and deletes the 9 rows that were only in the tracker because of the false tag (no company, no other topic, no AI in the headline).
 - **v3.27** (2026-09) — **Recover missed stories no longer ends in a timeout.** Its first real run ended with "Exceeded maximum execution time" though all 1,413 stories had reached All News (checked against the expected set: every one present, no duplicates): the result popup opens in the *sheet* tab and the script waits for a click there, so with the editor in front it sat until Google's 6-minute limit. The recovery (and the duplicate cleanup) now report in the execution log plus a non-blocking toast; fetching stops at 2.5 minutes instead of 3.5, leaving ample time to save; and progress is recorded only after the stories it covers are saved. New **Sync monthly tabs** repairs the one thing a cut-off run could leave behind — a month tab missing rows that All News has — and says so when nothing is missing.
 - **v3.26** (2026-09) — **TechCrunch and MIT Tech Review get their own photos too**, completing the set: every publication whose feed carries no images now has a pool of its own, and no photo appears in two pools. TechCrunch (heading for ~1,300 stories after the recovery) gets 587 photos in its brand green — leaves, ferns, moss, jungle, blossom and wildlife; MIT Tech Review (~270) gets 249 of the night sky, space, aurora, storms, ice and sea life, the space ones NASA public-domain images (Hubble, James Webb, the ISS) via rawpixel's CC0 collection — downloaded from its unwatermarked editor copies, not the watermarked previews. Same hand-picking as before: no people, roads, buildings or props.
 - **v3.25** (2026-09) — **The FT gets its own photos.** Like the Economist, the FT's feed carries no images and its article pages sit behind a bot check ("Security Verification"), so every FT card fell back on the keyword pools of 6–8 images — and with the missed-story recovery the FT is heading for ~1,400 stories. It now has a pool of 400 CC0 photos (StockSnap via Openverse, hand-picked the same way: no people, roads or buildings) weighted towards sea and coast, deserts and canyons, skies, autumn, fields and forests, so FT and Economist cards read differently at a glance. Separate from every other pool — no photo appears in two — so the page's no-repeat rule gives 400 FT cards in a row before any image comes back.
