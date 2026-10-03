@@ -965,7 +965,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.28</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.29</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -1018,6 +1018,7 @@
   <div class="grid" id="newsGrid">
     <div class="loading">Loading news</div>
   </div>
+  <div id="gridMore" style="height:1px" aria-hidden="true"></div>
 
   <footer>
     <strong>AI & BigTech News Tracker</strong> — Data from RSS feeds, updated hourly via Google Sheets
@@ -1557,13 +1558,13 @@
       btn.classList.toggle('active', !!(userTags[key] && userTags[key][tagName]));
     }
 
+    // One pass over the buttons: looking each card's buttons up separately
+    // rescanned the whole grid per card, seconds of freeze with thousands shown.
     function rerenderTagBtns() {
-      renderedArticles.forEach((article, idx) => {
-        const tags = userTags[article.headline] || {};
-        const keyBtn = document.querySelector(`[data-idx="${idx}"][data-tag="key"]`);
-        const resBtn = document.querySelector(`[data-idx="${idx}"][data-tag="research"]`);
-        if (keyBtn) keyBtn.classList.toggle('active', !!tags.key);
-        if (resBtn) resBtn.classList.toggle('active', !!tags.research);
+      document.querySelectorAll('#newsGrid .user-tag-btn[data-tag]').forEach(btn => {
+        const article = renderedArticles[btn.dataset.idx];
+        const tags = (article && userTags[article.headline]) || {};
+        btn.classList.toggle('active', !!tags[btn.dataset.tag]);
       });
     }
 
@@ -1837,13 +1838,54 @@
         ` &mdash; ${daysLabel}` +
         (picks > 1 ? ` <button type="button" class="clear-filters">Clear all</button>` : '');
 
-      // Render cards
+      // Render cards: the first batch now, the rest as the reader scrolls
       const grid = document.getElementById('newsGrid');
+      filteredArticles = filtered;
+      shownCount = 0;
       if (filtered.length === 0) {
         grid.innerHTML = '<div class="empty">No articles found for this filter combination.</div>';
+        watchForMore();
         return;
       }
-      grid.innerHTML = filtered.map((a, i) => createCard(a, i)).join('');
+      grid.innerHTML = '';
+      renderMoreCards(Math.max(CARD_BATCH, restoreShown));
+      restoreShown = 0;
+    }
+
+    // Drawing all ~5,000 cards at once froze an iPad for 15+ seconds, and a
+    // tap on a story waited for that to finish before the story opened. Cards
+    // now go in batches, the next one added as the reader nears the end.
+    const CARD_BATCH = 'IntersectionObserver' in window ? 60 : Infinity;
+    let filteredArticles = [];
+    let shownCount = 0;
+
+    // Safari may unload this tab while a story is open in another, and reload
+    // it on return. The history entry remembers how many cards were showing,
+    // so the reload draws as many and the scroll position can be restored.
+    let restoreShown = (history.state && history.state.shown) || 0;
+
+    const moreObserver = CARD_BATCH === Infinity ? null : new IntersectionObserver(entries => {
+      if (entries[entries.length - 1].isIntersecting) renderMoreCards(CARD_BATCH);
+    }, { rootMargin: '0px 0px 2000px 0px' });
+
+    function renderMoreCards(count) {
+      const next = filteredArticles.slice(shownCount, shownCount + count);
+      if (next.length) {
+        document.getElementById('newsGrid').insertAdjacentHTML('beforeend',
+          next.map((a, i) => createCard(a, shownCount + i)).join(''));
+        shownCount += next.length;
+        try { history.replaceState(Object.assign({}, history.state, { shown: shownCount }), ''); } catch (e) {}
+      }
+      watchForMore();
+    }
+
+    // Re-observing triggers a fresh check, so a batch that leaves the end
+    // still within reach is followed by the next without waiting for a scroll.
+    function watchForMore() {
+      if (!moreObserver) return;
+      const sentinel = document.getElementById('gridMore');
+      moreObserver.unobserve(sentinel);
+      if (shownCount < filteredArticles.length) moreObserver.observe(sentinel);
     }
 
     // ── Event Listeners ──────────────────────────
