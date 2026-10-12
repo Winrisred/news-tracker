@@ -965,7 +965,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.29</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.30</span></div>
       <h1>AI & BigTech</h1>
       <p class="header-subtitle">Curated headlines from the world's top sources, updated hourly</p>
       <div class="header-accent"></div>
@@ -1985,8 +1985,54 @@
     // re-render everything. Now the last downloaded CSV renders
     // instantly; the network is only consulted when that copy is older
     // than DATA_FRESH_MS, and updates apply quietly in the background.
+    //
+    // The copy lives in IndexedDB. It used to live in localStorage, which
+    // Safari caps at 5 MB per site and fills at two bytes per character:
+    // by late September the archive no longer fit, every save failed
+    // silently, and the iPad kept opening on the last copy that did.
     const DATA_CACHE_KEY = 'news-csv-cache-v1';
     const DATA_FRESH_MS = 10 * 60 * 1000; // Google republishes CSVs ~every few minutes
+
+    // The old localStorage copies would only hold that space. All pages
+    // share one quota, so whichever page opens first clears every one.
+    try {
+      ['news-csv-cache-v1', 'voices-csv-cache-v1', 'incidents-csv-cache-v1']
+        .forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+
+    // A one-store IndexedDB key–value cache. Any failure (private browsing,
+    // no space) simply means there is no cached copy.
+    const dataCache = (() => {
+      let db = null;
+      function open() {
+        if (!db) db = new Promise((resolve, reject) => {
+          const req = indexedDB.open('news-tracker-data', 1);
+          req.onupgradeneeded = () => req.result.createObjectStore('csv');
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        return db;
+      }
+      async function run(mode, op) {
+        const tx = (await open()).transaction('csv', mode);
+        const req = op(tx.objectStore('csv'));
+        return new Promise((resolve, reject) => {
+          tx.oncomplete = () => resolve(req.result);
+          tx.onerror = tx.onabort = () => reject(tx.error);
+        });
+      }
+      return {
+        // Never wait on storage for long: a stuck open must not hold up the page.
+        get: key => Promise.race([
+          run('readonly', s => s.get(key)),
+          new Promise(resolve => setTimeout(resolve, 2000, null)),
+        ]).catch(() => null),
+        // A copy that can't be replaced is dropped, so the page can never
+        // keep opening on the same old day again.
+        set: (key, value) => run('readwrite', s => s.put(value, key))
+          .catch(() => run('readwrite', s => s.delete(key)).catch(() => {})),
+      };
+    })();
 
     function applyCsv(text) {
       allArticles = prepareArticles(parseCSV(text));
@@ -1995,8 +2041,7 @@
     }
 
     async function loadData() {
-      let cached = null;
-      try { cached = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null'); } catch (e) {}
+      const cached = await dataCache.get(DATA_CACHE_KEY);
 
       if (cached && cached.csv) {
         applyCsv(cached.csv); // instant paint from the last download
@@ -2007,7 +2052,7 @@
         const response = await fetch(SHEET_CSV_URL);
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const text = await response.text();
-        try { localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({ at: Date.now(), csv: text })); } catch (e) {}
+        dataCache.set(DATA_CACHE_KEY, { at: Date.now(), csv: text });
         if (cached && cached.csv === text) return;        // nothing changed
         if (cached && window.scrollY > 200) return;       // don't yank the page mid-read
         applyCsv(text);

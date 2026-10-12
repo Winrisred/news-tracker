@@ -789,7 +789,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.29</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.30</span></div>
       <h1>AI Voices</h1>
       <p class="header-subtitle">Essays and commentary from the people worth reading on AI — researchers, analysts, policy minds, and cultural critics</p>
       <div class="header-accent"></div>
@@ -1411,8 +1411,50 @@
     // ── Load Data (stale-while-revalidate) ─────────
     // Same pattern as the Headlines page: instant render from the last
     // downloaded CSV, background refresh only when it has gone stale.
+    // The copy lives in IndexedDB: Safari's 5 MB localStorage cap stopped
+    // holding the archives (see the Headlines page).
     const DATA_CACHE_KEY = 'voices-csv-cache-v1';
     const DATA_FRESH_MS = 10 * 60 * 1000;
+
+    // The old localStorage copies would only hold that space. All pages
+    // share one quota, so whichever page opens first clears every one.
+    try {
+      ['news-csv-cache-v1', 'voices-csv-cache-v1', 'incidents-csv-cache-v1']
+        .forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+
+    // A one-store IndexedDB key–value cache, the same on every page. Any
+    // failure (private browsing, no space) simply means no cached copy.
+    const dataCache = (() => {
+      let db = null;
+      function open() {
+        if (!db) db = new Promise((resolve, reject) => {
+          const req = indexedDB.open('news-tracker-data', 1);
+          req.onupgradeneeded = () => req.result.createObjectStore('csv');
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        return db;
+      }
+      async function run(mode, op) {
+        const tx = (await open()).transaction('csv', mode);
+        const req = op(tx.objectStore('csv'));
+        return new Promise((resolve, reject) => {
+          tx.oncomplete = () => resolve(req.result);
+          tx.onerror = tx.onabort = () => reject(tx.error);
+        });
+      }
+      return {
+        // Never wait on storage for long: a stuck open must not hold up the page.
+        get: key => Promise.race([
+          run('readonly', s => s.get(key)),
+          new Promise(resolve => setTimeout(resolve, 2000, null)),
+        ]).catch(() => null),
+        // A copy that can't be replaced is dropped rather than left to go stale.
+        set: (key, value) => run('readwrite', s => s.put(value, key))
+          .catch(() => run('readwrite', s => s.delete(key)).catch(() => {})),
+      };
+    })();
 
     function applyCsv(text) {
       allPosts = parseCSV(text);
@@ -1420,8 +1462,7 @@
     }
 
     async function loadData() {
-      let cached = null;
-      try { cached = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null'); } catch (e) {}
+      const cached = await dataCache.get(DATA_CACHE_KEY);
 
       if (cached && cached.csv) {
         applyCsv(cached.csv); // instant paint from the last download
@@ -1432,7 +1473,7 @@
         const response = await fetch(VOICES_CSV_URL);
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const text = await response.text();
-        try { localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({ at: Date.now(), csv: text })); } catch (e) {}
+        dataCache.set(DATA_CACHE_KEY, { at: Date.now(), csv: text });
         if (cached && cached.csv === text) return;
         if (cached && window.scrollY > 200) return;
         applyCsv(text);
