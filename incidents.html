@@ -378,8 +378,8 @@
       background: none;
       border: 1px solid color-mix(in srgb, var(--src) 35%, transparent);
       padding: 0.12rem 0.5rem;
-      border-radius: 999px;
-      white-space: nowrap;
+      border-radius: 0.8rem;
+      max-width: 100%; /* a long technology list wraps inside the card */
     }
 
     .inc-harms {
@@ -448,7 +448,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.30</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.31</span></div>
       <h1>AI Incidents</h1>
       <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database</p>
       <div class="header-accent"></div>
@@ -482,7 +482,7 @@
         <button class="src-chip c-aiid" data-src="AIID">AIID</button>
       </div>
       <div class="filter-group">
-        <span class="filter-label">Year</span>
+        <span class="filter-label">Year occurred</span>
         <select class="filter-select" id="yearSelect"><option value="all">All</option></select>
       </div>
       <div class="filter-group">
@@ -682,10 +682,17 @@
             .toLowerCase().includes(q));
       }
 
+      // AIAAIC dates a record by the year it occurred, so its newest
+      // additions land in 2025 or 2021 as often as 2026. Its IDs run in
+      // the order records are added, so the AIAAIC view sorts by ID —
+      // newest first, like the "Latest entries" list on aiaaic.org.
+      const idNum = x => parseInt(String(x.id).replace(/\D/g, ''), 10) || 0;
+      const byAdded = currentSrc === 'AIAAIC';
       filtered = filtered.slice().sort((a, b) => {
+        if (byAdded) return idNum(b) - idNum(a);
         const at = isNaN(a.date.getTime()) ? -Infinity : a.date.getTime();
         const bt = isNaN(b.date.getTime()) ? -Infinity : b.date.getTime();
-        return (bt - at) || String(b.id).localeCompare(String(a.id));
+        return (bt - at) || (idNum(b) - idNum(a));
       });
 
       const ledger = document.getElementById('ledger');
@@ -697,7 +704,8 @@
       const nB = filtered.length - nA;
       document.getElementById('statsCount').textContent =
         filtered.length + (filtered.length === 1 ? ' incident' : ' incidents') +
-        ' · ' + nA + ' AIAAIC · ' + nB + ' AIID';
+        ' · ' + nA + ' AIAAIC · ' + nB + ' AIID' +
+        (byAdded && filtered.length > 1 ? ' · newest additions first' : '');
     }
 
     // ── Filter events ──────────────────────────────

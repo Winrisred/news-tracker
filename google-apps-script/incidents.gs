@@ -1,6 +1,6 @@
 // ============================================================
 // AI Incidents Tracker — Google Apps Script
-// Version: v3.5 (2026-08)
+// Version: v3.31 (2026-10)
 //
 // Collects AI incident records from two public registries and
 // stores them in Google Sheets for the incidents.html ledger:
@@ -28,7 +28,7 @@
 //      paste the URL into INCIDENTS_CSV_URL in incidents.html
 // ============================================================
 
-const SCRIPT_VERSION = "v3.5";
+const SCRIPT_VERSION = "v3.31";
 
 const MASTER_SHEET = "All Incidents";
 const SUMMARY_SHEET = "Summary";
@@ -52,6 +52,8 @@ function fetchIncidents() {
 
   try {
     var aiaaic = fetchAiaaic_();
+    var relinked = repairAiaaicLinks_(master, aiaaic);
+    if (relinked) Logger.log("Relinked " + relinked + " AIAAIC rows to their incident pages.");
     for (var i = 0; i < aiaaic.length; i++) {
       if (!existingKeys[aiaaic[i].id]) {
         newItems.push(aiaaic[i]);
@@ -94,15 +96,32 @@ function fetchIncidents() {
 // ============================================================
 // AIAAIC (CSV export of their public sheet)
 // ============================================================
-// Column map (validated against the live sheet):
-//   0 ID, 1 Headline, 2 Occurred(year), 3 Deployer, 4 Developer,
-//   5 System, 6 Technology, 7 Purpose, 8 News trigger,
-//   9 Ethical issue, 10 Jurisdiction, 11 Sector,
-//   12/13/14 External harm (individual/societal/environmental),
-//   15 Consequence, 16 Response, 17 Summary/links
+// AIAAIC inserts columns now and then: "Harm status" arrived in
+// Oct 2026 and pushed Summary/links from column 17 to 18, so new
+// rows were stored with the repository home page as their link.
+// Columns are therefore found by their header text, never by
+// position. The header spans two rows: "Impacted area" and
+// "External harm" are merged cells whose sub-columns are named
+// on the row below.
 
-function fetchAiaaic_() {
-  var items = [];
+const AIAAIC_HEADERS = {
+  id: /^aiaaic id/,
+  headline: /headline/,
+  occurred: /^occurred/,
+  deployer: /^deployer/,
+  developer: /^developer/,
+  system: /^system/,
+  technology: /^technology/,
+  jurisdiction: /jurisdiction/,
+  sector: /sector/,
+  harmIndividual: /individual/,
+  harmSocietal: /societal/,
+  harmEnvironmental: /environmental/,
+  link: /summary|links/
+};
+
+// The registry's rows, or null if it couldn't be fetched
+function fetchAiaaicRows_() {
   var response = UrlFetchApp.fetch(AIAAIC_CSV_URL, {
     muteHttpExceptions: true,
     followRedirects: true,
@@ -110,46 +129,103 @@ function fetchAiaaic_() {
   });
   if (response.getResponseCode() !== 200) {
     Logger.log("AIAAIC returned HTTP " + response.getResponseCode());
+    return null;
+  }
+  return Utilities.parseCsv(response.getContentText());
+}
+
+// Column index per AIAAIC_HEADERS key (-1 if absent), or null if
+// the header row can't be found
+function aiaaicColumns_(rows) {
+  for (var i = 0; i < rows.length; i++) {
+    if (!/^AIAAIC ID/i.test(String(rows[i][0] || "").trim())) continue;
+    var below = rows[i + 1] || [];
+    var sub = String(below[0] || "").trim() ? [] : below;
+    var labels = rows[i].map(function(h, c) {
+      return (String(h || "") + " " + String(sub[c] || "")).trim().toLowerCase();
+    });
+    var cols = {};
+    for (var key in AIAAIC_HEADERS) {
+      cols[key] = -1;
+      for (var c = 0; c < labels.length; c++) {
+        if (AIAAIC_HEADERS[key].test(labels[c])) { cols[key] = c; break; }
+      }
+    }
+    return cols;
+  }
+  return null;
+}
+
+function fetchAiaaic_() {
+  var items = [];
+  var rows = fetchAiaaicRows_();
+  if (!rows) return items;
+  var col = aiaaicColumns_(rows);
+  if (!col || col.id < 0 || col.headline < 0) {
+    Logger.log("AIAAIC header row not recognised — sheet layout changed?");
     return items;
   }
+  function cell(r, key) { return col[key] >= 0 ? r[col[key]] : ""; }
 
-  var rows = Utilities.parseCsv(response.getContentText());
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
-    if (!r || !r[0] || !/^AIAAIC\d+/i.test(String(r[0]).trim())) continue;
+    var id = String(cell(r, "id") || "").trim();
+    if (!/^AIAAIC\d+/i.test(id)) continue;
 
-    var headline = cleanText_(r[1]);
+    var headline = cleanText_(cell(r, "headline"));
     if (!headline) continue;
 
     // ~170 registry rows have no "Occurred" year — store them undated
     // (blank date cell) rather than faking a date; the page shows
     // "Undated" and sorts them last.
-    var yr = parseInt(String(r[2] || "").trim().substring(0, 4), 10);
-    var harms = [r[12], r[13], r[14]]
+    var yr = parseInt(String(cell(r, "occurred") || "").trim().substring(0, 4), 10);
+    var harms = [cell(r, "harmIndividual"), cell(r, "harmSocietal"), cell(r, "harmEnvironmental")]
       .map(function(x) { return String(x || "").trim().replace(/;\s*$/, ""); })
       .filter(String).join("; ");
-    var link = String(r[17] || "").trim();
+    var link = String(cell(r, "link") || "").trim();
     if (link.indexOf("http") !== 0) link = AIAAIC_FALLBACK_LINK;
 
     items.push({
       date: isNaN(yr) ? "" : new Date(yr, 0, 1),
       source: "AIAAIC",
-      id: String(r[0]).trim(),
+      id: id,
       headline: headline,
       link: link,
       citeLink: "",
       outlet: "",
-      deployer: cleanText_(r[3]),
-      developer: cleanText_(r[4]),
-      system: cleanText_(r[5]),
-      technology: cleanText_(r[6]),
-      jurisdiction: cleanText_(r[10]),
-      sector: cleanText_(r[11]),
+      deployer: cleanText_(cell(r, "deployer")),
+      developer: cleanText_(cell(r, "developer")),
+      system: cleanText_(cell(r, "system")),
+      technology: cleanText_(cell(r, "technology")),
+      jurisdiction: cleanText_(cell(r, "jurisdiction")),
+      sector: cleanText_(cell(r, "sector")),
       harms: cleanText_(harms),
       snippet: ""
     });
   }
   return items;
+}
+
+// Rows stored before AIAAIC published their incident page (or while
+// the link column was misread) point at the repository home page.
+// Each fetch swaps in the incident page once the registry has one.
+function repairAiaaicLinks_(sheet, items) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return 0;
+  var pages = {};
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].link !== AIAAIC_FALLBACK_LINK) pages[items[i].id] = items[i].link;
+  }
+  var data = sheet.getRange(2, 3, lastRow - 1, 3).getValues(); // ID, Headline, Link
+  var fixed = 0;
+  for (var j = 0; j < data.length; j++) {
+    var page = pages[String(data[j][0]).trim()];
+    if (page && String(data[j][2]).trim() === AIAAIC_FALLBACK_LINK) {
+      sheet.getRange(j + 2, 5).setValue(page);
+      fixed++;
+    }
+  }
+  return fixed;
 }
 
 
@@ -506,15 +582,9 @@ function reformatAllSheets() {
 // which IDs are genuinely undated, and blanks their Date cells.
 function repairUndatedAiaaic() {
   var undated = {};
-  var rows = Utilities.parseCsv(UrlFetchApp.fetch(AIAAIC_CSV_URL, {
-    muteHttpExceptions: true, followRedirects: true,
-    headers: { "User-Agent": "Mozilla/5.0 NewsTracker/1.0" }
-  }).getContentText());
-  for (var i = 0; i < rows.length; i++) {
-    var r = rows[i];
-    if (!r || !r[0] || !/^AIAAIC\d+/i.test(String(r[0]).trim())) continue;
-    var yr = parseInt(String(r[2] || "").trim().substring(0, 4), 10);
-    if (isNaN(yr)) undated[String(r[0]).trim()] = true;
+  var items = fetchAiaaic_();
+  for (var i = 0; i < items.length; i++) {
+    if (!items[i].date) undated[items[i].id] = true;
   }
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
