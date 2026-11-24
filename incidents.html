@@ -345,6 +345,12 @@
     .attribution a { color: var(--text-muted); text-decoration: underline; }
     .attribution a:hover { color: var(--navy); }
 
+    /* Pointer to MIT's harm ratings, in the views that show AIID rows */
+    .harm-note { margin-top: 0.15rem; }
+    .harm-note[hidden] { display: none; }
+    .harm-note a { color: var(--src-aiid); font-weight: 600; text-decoration: none; }
+    .harm-note a:hover { text-decoration: underline; }
+
     .demo-note {
       display: inline-block;
       margin-left: 0.75rem;
@@ -556,7 +562,7 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.33</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.34</span></div>
       <h1>AI Incidents</h1>
       <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database<span class="dail-only" hidden>, and the lawsuits over AI tracked by GW's Database of AI Litigation</span></p>
       <div class="header-accent"></div>
@@ -633,6 +639,7 @@
   <div class="stats-bar">
     <span class="stats-count" id="statsCount">Loading...</span><span class="demo-note" id="demoNote" style="display:none;">Demo content — publish the Incidents sheet as CSV and set INCIDENTS_CSV_URL to go live</span>
     <div class="attribution">Data: <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) · <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a><span class="dail-only" hidden> · <a href="https://blogs.gwu.edu/law-eti/ai-litigation-database/" target="_blank" rel="noopener">Database of AI Litigation</a> (GW Ethical Tech Initiative)</span></div>
+    <div class="attribution harm-note" id="harmNote">How severe was the harm? <a href="https://airisk.mit.edu/ai-incident-tracker/harm-taxonomy" target="_blank" rel="noopener">MIT's AI Incident Tracker</a> rates each AIID incident on 13 kinds of harm, from negligible to catastrophic (ratings made with an AI model).</div>
   </div>
 
   <div class="ledger-wrap">
@@ -890,6 +897,8 @@
       document.getElementById('sectorGroup').hidden = dail;
       document.getElementById('yearLabel').textContent = dail ? 'Year filed' : 'Year occurred';
       document.getElementById('searchInput').placeholder = dail ? 'Search lawsuits…' : 'Search incidents…';
+      // MIT rates AIID incidents only: show the pointer where AIID rows can appear
+      document.getElementById('harmNote').hidden = currentSrc === 'AIAAIC' || dail;
     }
 
     // Theme pills count the cases left by the other filters, so a search
