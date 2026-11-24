@@ -556,9 +556,9 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.32</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.33</span></div>
       <h1>AI Incidents</h1>
-      <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database, and the lawsuits over AI tracked by GW's Database of AI Litigation</p>
+      <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database<span class="dail-only" hidden>, and the lawsuits over AI tracked by GW's Database of AI Litigation</span></p>
       <div class="header-accent"></div>
       <nav class="site-nav">
         <a class="site-tab" href="index.html" aria-label="Headlines" title="Headlines">
@@ -632,7 +632,7 @@
 
   <div class="stats-bar">
     <span class="stats-count" id="statsCount">Loading...</span><span class="demo-note" id="demoNote" style="display:none;">Demo content — publish the Incidents sheet as CSV and set INCIDENTS_CSV_URL to go live</span>
-    <div class="attribution">Data: <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) · <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a> · <a href="https://blogs.gwu.edu/law-eti/ai-litigation-database/" target="_blank" rel="noopener">Database of AI Litigation</a> (GW Ethical Tech Initiative)</div>
+    <div class="attribution">Data: <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) · <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a><span class="dail-only" hidden> · <a href="https://blogs.gwu.edu/law-eti/ai-litigation-database/" target="_blank" rel="noopener">Database of AI Litigation</a> (GW Ethical Tech Initiative)</span></div>
   </div>
 
   <div class="ledger-wrap">
@@ -640,7 +640,7 @@
   </div>
 
   <footer>
-    <strong>AI Incidents</strong> — Records from the <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) and the <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a>, and cases from the <a href="https://blogs.gwu.edu/law-eti/ai-litigation-database/" target="_blank" rel="noopener">Database of AI Litigation</a> (GW Ethical Tech Initiative), collected via Google Sheets
+    <strong>AI Incidents</strong> — Records from the <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) and the <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a><span class="dail-only" hidden>, and cases from the <a href="https://blogs.gwu.edu/law-eti/ai-litigation-database/" target="_blank" rel="noopener">Database of AI Litigation</a> (GW Ethical Tech Initiative)</span>, collected via Google Sheets
   </footer>
 
   <script>
@@ -788,8 +788,11 @@
       ySel.value = currentYear;
       if (ySel.value !== currentYear) { currentYear = 'all'; ySel.value = 'all'; }
 
-      // No lawsuits until the v3.32 script has filled them in
-      document.querySelector('.src-chip.c-dail').hidden = !allIncidents.some(x => x.source === 'DAIL');
+      // Lawsuits (and DAIL's credits) only once the sheet holds some:
+      // the DAIL fetch is off until GW offers an export (incidents.gs)
+      const noDail = !allIncidents.some(x => x.source === 'DAIL');
+      document.querySelector('.src-chip.c-dail').hidden = noDail;
+      document.querySelectorAll('.dail-only').forEach(el => { el.hidden = noDail; });
 
       const sSel = document.getElementById('sectorSelect');
       sSel.innerHTML = '<option value="all">All</option>' +

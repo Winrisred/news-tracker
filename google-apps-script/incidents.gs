@@ -1,6 +1,6 @@
 // ============================================================
 // AI Incidents Tracker — Google Apps Script
-// Version: v3.32 (2026-11)
+// Version: v3.33 (2026-11)
 //
 // Collects AI incident records from two public registries, and
 // AI lawsuits from a third, and stores them in Google Sheets for
@@ -13,10 +13,12 @@
 //   • AI Incident Database (AIID) — RSS feed of newly added
 //     incident reports (real dates, article links, incident IDs).
 //   • Database of AI Litigation (DAIL), GW Ethical Tech Initiative
-//     — ~570 lawsuits, read from the search page on its site (it
-//     has no export). Unlike the registries, a case keeps changing
-//     after it is filed, so every fetch re-reads the whole list and
-//     updates stored cases in place.
+//     — ~570 lawsuits. SWITCHED OFF (DAIL_ENABLED): its site blocks
+//     scripted access, so this waits for an export or feed from GW.
+//     The code reads the search page on its site (it has no export).
+//     Unlike the registries, a case keeps changing after it is
+//     filed, so every fetch re-reads the whole list and updates
+//     stored cases in place.
 //
 // The sources are kept as parallel streams (Source column),
 // never merged/deduplicated across each other.
@@ -28,13 +30,13 @@
 // Setup (use a NEW Google Sheet, separate from news and voices):
 //   1. Extensions → Apps Script → paste this code
 //   2. Run setupSheets() once
-//   3. Run fetchIncidents() — first run backfills ~2,800 rows
+//   3. Run fetchIncidents() — first run backfills ~2,250 rows
 //   4. Run createTwelveHourTrigger() to automate
 //   5. File → Share → Publish to web → "All Incidents" as CSV,
 //      paste the URL into INCIDENTS_CSV_URL in incidents.html
 // ============================================================
 
-const SCRIPT_VERSION = "v3.32";
+const SCRIPT_VERSION = "v3.33";
 
 const MASTER_SHEET = "All Incidents";
 const SUMMARY_SHEET = "Summary";
@@ -43,6 +45,14 @@ const MAX_ROWS = 8000;
 const AIAAIC_CSV_URL = "https://docs.google.com/spreadsheets/d/1Bn55B4xz21-_Rgdr8BBb2lt0n_4rzLGxFADMlVW0PYI/export?format=csv&gid=888071280";
 const AIAAIC_FALLBACK_LINK = "https://www.aiaaic.org/aiaaic-repository";
 const AIID_RSS_URL = "https://incidentdatabase.ai/rss.xml";
+
+// DAIL's site sits behind AWS bot protection (Nov 2026): scripted
+// requests get challenged ("x-amzn-waf-action: challenge"), and from
+// Apps Script the search came back without results. The fetch stays
+// off until GW offers an export or feed. Don't try to get past the
+// challenge: it is the site saying no to scripts. Stored DAIL rows,
+// if any, are left as they are.
+const DAIL_ENABLED = false;
 
 const DAIL_HOST_PAGE = "https://blogs.gwu.edu/law-eti/ai-litigation-database/";
 const DAIL_CASE_PAGE = "https://blogs.gwu.edu/law-eti/ai-litigation-database/case-detail-page/?pid=";
@@ -95,7 +105,7 @@ function fetchIncidents() {
 
   var dailSync = null;
   try {
-    var dail = fetchDail_();
+    var dail = DAIL_ENABLED ? fetchDail_() : null;
     if (dail) {
       dailSync = syncDail_(master, dail);
       for (var k = 0; k < dailSync.fresh.length; k++) {
@@ -834,7 +844,7 @@ function setupSheets() {
   getOrCreateSheet_(ss, MASTER_SHEET, getHeaders_());
   SpreadsheetApp.getUi().alert(
     "Setup complete! (script " + SCRIPT_VERSION + ")\n\n" +
-    "1. Run 'fetchIncidents' — the first run backfills ~2,250 AIAAIC records and ~570 DAIL cases\n" +
+    "1. Run 'fetchIncidents' — the first run backfills ~2,250 AIAAIC records\n" +
     "2. Run 'createTwelveHourTrigger' to automate"
   );
 }
@@ -930,8 +940,10 @@ function testSources() {
   var a = [], b = [], c = [];
   try { a = fetchAiaaic_(); } catch (e) { Logger.log("AIAAIC: " + e.message); }
   try { b = fetchAiid_(); } catch (e) { Logger.log("AIID: " + e.message); }
-  try { c = fetchDail_() || []; } catch (e) { Logger.log("DAIL: " + e.message); }
-  Logger.log("AIAAIC: " + a.length + " | AIID: " + b.length + " | DAIL: " + c.length);
+  if (DAIL_ENABLED) {
+    try { c = fetchDail_() || []; } catch (e) { Logger.log("DAIL: " + e.message); }
+  }
+  Logger.log("AIAAIC: " + a.length + " | AIID: " + b.length + " | DAIL: " + (DAIL_ENABLED ? c.length : "off"));
   if (a.length) Logger.log("AIAAIC first: " + a[0].id + " — " + a[0].headline);
   if (b.length) Logger.log("AIID first: " + b[0].id + " — " + b[0].headline);
   if (c.length) Logger.log("DAIL first: " + c[0].id + " — " + c[0].headline);
@@ -939,7 +951,7 @@ function testSources() {
     "Source test (script " + SCRIPT_VERSION + ")\n\n" +
     "AIAAIC records: " + a.length + "\n" +
     "AIID reports: " + b.length + "\n" +
-    "DAIL cases: " + c.length + "\n\n" +
+    "DAIL cases: " + (DAIL_ENABLED ? c.length : "off (DAIL_ENABLED)") + "\n\n" +
     "Check Apps Script logs for samples."
   );
 }
