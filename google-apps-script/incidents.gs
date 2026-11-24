@@ -1,9 +1,10 @@
 // ============================================================
 // AI Incidents Tracker — Google Apps Script
-// Version: v3.31 (2026-10)
+// Version: v3.32 (2026-11)
 //
-// Collects AI incident records from two public registries and
-// stores them in Google Sheets for the incidents.html ledger:
+// Collects AI incident records from two public registries, and
+// AI lawsuits from a third, and stores them in Google Sheets for
+// the incidents.html ledger:
 //
 //   • AIAAIC Repository — the full curated registry, fetched as
 //     CSV from its public Google Sheet. License: CC BY-SA 4.0 —
@@ -11,8 +12,13 @@
 //     taxonomy (deployer, developer, sector, jurisdiction, harms).
 //   • AI Incident Database (AIID) — RSS feed of newly added
 //     incident reports (real dates, article links, incident IDs).
+//   • Database of AI Litigation (DAIL), GW Ethical Tech Initiative
+//     — ~570 lawsuits, read from the search page on its site (it
+//     has no export). Unlike the registries, a case keeps changing
+//     after it is filed, so every fetch re-reads the whole list and
+//     updates stored cases in place.
 //
-// The two sources are kept as parallel streams (Source column),
+// The sources are kept as parallel streams (Source column),
 // never merged/deduplicated across each other.
 //
 // Sheets:
@@ -22,13 +28,13 @@
 // Setup (use a NEW Google Sheet, separate from news and voices):
 //   1. Extensions → Apps Script → paste this code
 //   2. Run setupSheets() once
-//   3. Run fetchIncidents() — first run backfills ~2,250 rows
+//   3. Run fetchIncidents() — first run backfills ~2,800 rows
 //   4. Run createTwelveHourTrigger() to automate
 //   5. File → Share → Publish to web → "All Incidents" as CSV,
 //      paste the URL into INCIDENTS_CSV_URL in incidents.html
 // ============================================================
 
-const SCRIPT_VERSION = "v3.31";
+const SCRIPT_VERSION = "v3.32";
 
 const MASTER_SHEET = "All Incidents";
 const SUMMARY_SHEET = "Summary";
@@ -37,6 +43,17 @@ const MAX_ROWS = 8000;
 const AIAAIC_CSV_URL = "https://docs.google.com/spreadsheets/d/1Bn55B4xz21-_Rgdr8BBb2lt0n_4rzLGxFADMlVW0PYI/export?format=csv&gid=888071280";
 const AIAAIC_FALLBACK_LINK = "https://www.aiaaic.org/aiaaic-repository";
 const AIID_RSS_URL = "https://incidentdatabase.ai/rss.xml";
+
+const DAIL_HOST_PAGE = "https://blogs.gwu.edu/law-eti/ai-litigation-database/";
+const DAIL_CASE_PAGE = "https://blogs.gwu.edu/law-eti/ai-litigation-database/case-detail-page/?pid=";
+const DAIL_DATAPAGE = "https://c7amf338.caspio.com/dp/c2bb900059f36a69ab3641b59ba4";
+
+// DAIL states no licence for reuse (AIAAIC is CC BY-SA). Case names,
+// courts, dates, status and labels are facts; the one-line case
+// descriptions are GW's own writing, so they stay out of the
+// published sheet until GW agrees. Set this to true and the next
+// fetch fills them in on every case (false blanks them again).
+const DAIL_INCLUDE_DESCRIPTIONS = false;
 
 
 // ============================================================
@@ -76,15 +93,36 @@ function fetchIncidents() {
     Logger.log("AIID error: " + e.message);
   }
 
-  if (newItems.length === 0) {
+  var dailSync = null;
+  try {
+    var dail = fetchDail_();
+    if (dail) {
+      dailSync = syncDail_(master, dail);
+      for (var k = 0; k < dailSync.fresh.length; k++) {
+        if (!existingKeys[dailSync.fresh[k].id]) {
+          newItems.push(dailSync.fresh[k]);
+          existingKeys[dailSync.fresh[k].id] = true;
+        }
+      }
+      Logger.log("DAIL: " + dail.length + " cases · " + dailSync.fresh.length + " new · " +
+                 dailSync.updated + " updated · " + dailSync.removed + " withdrawn");
+    }
+  } catch (e) {
+    Logger.log("DAIL error: " + e.message);
+  }
+
+  var touched = dailSync && (dailSync.updated || dailSync.removed);
+  if (newItems.length === 0 && !touched) {
     Logger.log("No new incidents.");
     return;
   }
 
-  newItems.sort(function(a, b) {
-    return (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0);
-  });
-  writeIncidents_(master, newItems);
+  if (newItems.length) {
+    newItems.sort(function(a, b) {
+      return (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0);
+    });
+    writeIncidents_(master, newItems);
+  }
   updateSummary_(ss, master);
   trimSheet_(master, MAX_ROWS);
   autoFormatSheets_(ss);
@@ -337,28 +375,278 @@ function findIncident_(o, depth) {
 
 
 // ============================================================
+// DAIL (Database of AI Litigation, GW Ethical Tech Initiative)
+// ============================================================
+// The database is a Caspio app embedded in the GW page, with no
+// export or feed. Its search page is read the way the page's own
+// script reads it, in three steps:
+//   1. the search form (Caspio returns it inside a JS call)
+//   2. an empty search, posted back; the redirect it answers with
+//      carries the session id
+//   3. the result pages, 50 cases each (~12 pages, ~3 MB in all)
+// Cells are found by their labels, never by position. Any step
+// that fails skips DAIL for this run and leaves stored cases alone.
+
+// Every case, or null if the list couldn't be read in full
+function fetchDail_() {
+  var appKey = DAIL_DATAPAGE.split("/").pop();
+  var cookies = {};
+
+  function remember(resp) {
+    var sc = header_(resp, "Set-Cookie");
+    if (!sc) return;
+    (Array.isArray(sc) ? sc : [sc]).forEach(function(c) {
+      var pair = String(c).split(";")[0];
+      var eq = pair.indexOf("=");
+      if (eq > 0) cookies[pair.substring(0, eq).trim()] = pair.substring(eq + 1).trim();
+    });
+  }
+  function request(url, payload, follow) {
+    var headers = { "User-Agent": "Mozilla/5.0 NewsTracker/1.0", "Referer": DAIL_HOST_PAGE };
+    var jar = Object.keys(cookies).map(function(k) { return k + "=" + cookies[k]; }).join("; ");
+    if (jar) headers.Cookie = jar;
+    var opts = { muteHttpExceptions: true, followRedirects: follow !== false, headers: headers };
+    if (payload) { opts.method = "post"; opts.payload = payload; }
+    var resp = UrlFetchApp.fetch(url, opts);
+    remember(resp);
+    return resp;
+  }
+
+  // 1. The search form
+  var query = "AppKey=" + appKey + "&js=true&cbEmbDeployWith=new_async_embedjs" +
+    "&cbDatapageAnchorId=newstracker&pathname=" + DAIL_HOST_PAGE +
+    "&cbScreenWidth=1400&cbEmbQueryStr=&cbParamList=";
+  var resp = request(DAIL_DATAPAGE + "?cbqe=" + encodeURIComponent(Utilities.base64Encode(query)) +
+    "&cbEmbedTimeStamp=" + Date.now());
+  if (resp.getResponseCode() !== 200) {
+    Logger.log("DAIL form returned HTTP " + resp.getResponseCode());
+    return null;
+  }
+  var fields = dailFormFields_(dailEmbeddedHtml_(resp.getContentText()));
+  if (!fields.searchID || !fields.cbUniqueFormId) {
+    Logger.log("DAIL search form not recognised — has the page changed?");
+    return null;
+  }
+
+  // 2. An empty search (every case)
+  resp = request(DAIL_DATAPAGE, fields, false);
+  var session = (String(header_(resp, "Location") || "").match(/appSession=([A-Za-z0-9]+)/) || [])[1];
+  if (!session) {
+    Logger.log("DAIL search returned no session (HTTP " + resp.getResponseCode() + ")");
+    return null;
+  }
+
+  // 3. The result pages
+  var byPid = {}, items = [], total = null;
+  for (var page = 1; page <= 40; page++) {
+    resp = request(DAIL_DATAPAGE + "?rnd=" + Date.now(), {
+      ClientQueryString: "", appSession: session, siblingDataPageAppSessions: "{}",
+      AjaxAction: "GetData", GridMode: "False", cbUniqueFormId: fields.cbUniqueFormId,
+      js: "true", cbCurrentPageSize: "50", CPIPage: String(page),
+      CPIOrderBy: "Case_Table_Caption", CPISortType: "asc", PageID: "2",
+      AjaxActionHostName: "https://blogs.gwu.edu", cbAjaxReferrer: DAIL_HOST_PAGE
+    });
+    if (resp.getResponseCode() !== 200) {
+      Logger.log("DAIL page " + page + " returned HTTP " + resp.getResponseCode());
+      return null;
+    }
+    var html = String(JSON.parse(resp.getContentText()).responseText || "");
+    var count = html.match(/Records\s*\d+\s*-\s*\d+\s*of\s*(\d+)/i);
+    if (count) total = parseInt(count[1], 10);
+    var rows = dailRows_(html);
+    for (var i = 0; i < rows.length; i++) {
+      if (byPid[rows[i].pid]) continue;
+      byPid[rows[i].pid] = true;
+      var item = dailItem_(rows[i]);
+      if (item) items.push(item);
+    }
+    if (!rows.length || total === null || Object.keys(byPid).length >= total) break;
+  }
+  if (total === null || Object.keys(byPid).length < total) {
+    Logger.log("DAIL: read " + Object.keys(byPid).length + " of " + total + " cases — skipped this run");
+    return null;
+  }
+  return items;
+}
+
+// A response header, whatever its capitalisation
+function header_(resp, name) {
+  var all = resp.getAllHeaders();
+  for (var k in all) if (k.toLowerCase() === name.toLowerCase()) return all[k];
+  return null;
+}
+
+// Caspio answers with JS that calls parseAndLoadDatapage(anchor, key,
+// '<html as a JS string>'); this returns that HTML
+function dailEmbeddedHtml_(js) {
+  var m = js.match(/parseAndLoadDatapage\('[^']*',\s*'[0-9a-f]+',\s*'((?:[^'\\]|\\[\s\S])*)'/);
+  if (!m) return "";
+  return m[1].replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/g, function(all, e) {
+    if (e.length > 1) return String.fromCharCode(parseInt(e.substring(1), 16));
+    return { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v", "0": "\0" }[e] || e;
+  });
+}
+
+// The search form's fields, as the browser would post them
+function dailFormFields_(html) {
+  var fields = {};
+  var form = (html.match(/<form[^>]*id="caspioform"[\s\S]*?<\/form>/i) || [html])[0];
+  (form.match(/<input\b[^>]*>/gi) || []).forEach(function(tag) {
+    var name = (tag.match(/\bname="([^"]*)"/i) || [])[1];
+    var type = ((tag.match(/\btype="([^"]*)"/i) || [])[1] || "text").toLowerCase();
+    if (!name || ["hidden", "text", "submit"].indexOf(type) < 0) return;
+    if (type === "submit" && name !== "searchID") return;
+    var value = (tag.match(/\bvalue="([^"]*)"/i) || [])[1] || "";
+    fields[name] = value.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  });
+  (form.match(/<select\b[^>]*>/gi) || []).forEach(function(tag) {
+    var name = (tag.match(/\bname="([^"]*)"/i) || [])[1];
+    if (name && !(name in fields)) fields[name] = "";
+  });
+  return fields;
+}
+
+// One object per result row: { pid, caption, issues, … } keyed by
+// the lower-cased cell label ("Algorithm :" → "algorithm")
+function dailRows_(html) {
+  var out = [];
+  (html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) || []).forEach(function(tr) {
+    var pid = (tr.match(/[?&;]pid=(\d+)/) || [])[1];
+    if (!pid) return;
+    var rec = { pid: pid };
+    (tr.match(/<td\b[^>]*>[\s\S]*?<\/td>/gi) || []).forEach(function(td) {
+      var label = (td.match(/class="cbResultSetLabel"[^>]*>([\s\S]*?)<\/span>/) || [])[1];
+      if (!label) return;
+      label = cleanText_(label).replace(/\s*:\s*$/, "").toLowerCase();
+      var iso = td.match(/<time[^>]*datetime="(\d{4})-(\d{2})-(\d{2})/);
+      rec[label] = iso
+        ? new Date(+iso[1], +iso[2] - 1, +iso[3])
+        : cleanText_(td.replace(/<span[^>]*class="cbResultSetLabel"[^>]*>[\s\S]*?<\/span>/, ""));
+    });
+    out.push(rec);
+  });
+  return out;
+}
+
+// A sheet row for one case. Date = filed; ID = DAIL's case number,
+// which runs in the order cases are added.
+function dailItem_(rec) {
+  var caption = rec.caption || "";
+  if (!caption) return null;
+  function day(v) {
+    if (v instanceof Date) return v;
+    var us = String(v || "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); // DAIL writes m/d/yyyy
+    return us ? new Date(+us[3], +us[1] - 1, +us[2]) : "";
+  }
+  var status = String(rec.status || "").trim();
+  status = status ? status.charAt(0).toUpperCase() + status.substring(1).toLowerCase() : "";
+  return {
+    date: day(rec["filing date"]),
+    source: "DAIL",
+    id: "DAIL-" + rec.pid,
+    headline: caption,
+    link: DAIL_CASE_PAGE + rec.pid,
+    citeLink: "",
+    outlet: "",
+    deployer: "", developer: "",
+    system: rec.algorithm || "",
+    technology: rec["application areas"] || "",
+    jurisdiction: rec.jurisdiction || "",
+    sector: "",
+    harms: rec.issues || "",
+    snippet: DAIL_INCLUDE_DESCRIPTIONS ? (rec["brief description"] || "") : "",
+    status: status,
+    activity: day(rec["new activity"])
+  };
+}
+
+// Cases change after they are filed (status, latest activity, new
+// issues), so stored cases are rewritten in place when anything
+// differs. Cases DAIL no longer lists (merged or withdrawn) are
+// removed. Returns the cases not stored yet.
+function syncDail_(sheet, items) {
+  var result = { fresh: [], updated: 0, removed: 0 };
+  var width = getHeaders_().length;
+  var lastRow = sheet.getLastRow();
+  var data = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, width).getValues() : [];
+  var rowOf = {};
+  for (var i = 0; i < data.length; i++) {
+    if (String(data[i][1]).trim() === "DAIL") rowOf[String(data[i][2]).trim()] = i;
+  }
+
+  var listed = {};
+  for (var j = 0; j < items.length; j++) {
+    var it = items[j];
+    listed[it.id] = true;
+    var r = rowOf[it.id];
+    if (r === undefined) { result.fresh.push(it); continue; }
+    var values = rowValues_(it);
+    if (sameRow_(data[r], values)) continue;
+    sheet.getRange(r + 2, 1, 1, width).setValues([values]);
+    result.updated++;
+  }
+
+  // The list was read in full (fetchDail_ checks), but a sudden
+  // collapse in its size is more likely a broken page than mass
+  // withdrawals — keep everything then.
+  var gone = [];
+  for (var id in rowOf) if (!listed[id]) gone.push(rowOf[id]);
+  if (gone.length && items.length >= 0.8 * Object.keys(rowOf).length) {
+    gone.sort(function(a, b) { return b - a; });
+    for (var g = 0; g < gone.length; g++) sheet.deleteRow(gone[g] + 2);
+    result.removed = gone.length;
+  }
+  return result;
+}
+
+function sameRow_(a, b) {
+  function key(v) {
+    if (v instanceof Date) return isNaN(v.getTime()) ? "" : v.getFullYear() + "-" + v.getMonth() + "-" + v.getDate();
+    return String(v == null ? "" : v).trim();
+  }
+  for (var i = 0; i < b.length; i++) if (key(a[i]) !== key(b[i])) return false;
+  return true;
+}
+
+
+// ============================================================
 // SHEET WRITING (bulk — the AIAAIC backfill is ~2,250 rows)
 // ============================================================
 
+// Status and Activity (v3.32) are DAIL's: a case's Active/Inactive
+// status and the date of its latest court activity
 function getHeaders_() {
   return ["Date", "Source", "ID", "Headline", "Link", "CiteLink", "Outlet",
           "Deployer", "Developer", "System", "Technology", "Jurisdiction",
-          "Sector", "Harms", "Snippet"];
+          "Sector", "Harms", "Snippet", "Status", "Activity"];
+}
+
+function rowValues_(it) {
+  return [it.date, it.source, it.id, it.headline, it.link, it.citeLink,
+          it.outlet, it.deployer, it.developer, it.system, it.technology,
+          it.jurisdiction, it.sector, it.harms, it.snippet,
+          it.status || "", it.activity || ""];
 }
 
 function writeIncidents_(sheet, items) {
-  var values = items.map(function(it) {
-    return [it.date, it.source, it.id, it.headline, it.link, it.citeLink,
-            it.outlet, it.deployer, it.developer, it.system, it.technology,
-            it.jurisdiction, it.sector, it.harms, it.snippet];
-  });
+  var values = items.map(rowValues_);
   sheet.insertRowsAfter(1, values.length);
   sheet.getRange(2, 1, values.length, values[0].length).setValues(values);
 }
 
 function getOrCreateSheet_(ss, name, headers) {
   var sheet = ss.getSheetByName(name);
-  if (!sheet) {
+  if (sheet) {
+    // Sheets made before v3.32 have 15 columns: add the new headers
+    if (sheet.getMaxColumns() < headers.length) {
+      sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
+    }
+    var have = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+    for (var c = 0; c < headers.length; c++) {
+      if (!String(have[c] || "").trim()) sheet.getRange(1, c + 1).setValue(headers[c]);
+    }
+  } else {
     sheet = ss.insertSheet(name);
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length)
@@ -380,8 +668,11 @@ function getOrCreateSheet_(ss, name, headers) {
     sheet.setColumnWidth(13, 130); // Sector
     sheet.setColumnWidth(14, 220); // Harms
     sheet.setColumnWidth(15, 320); // Snippet
-    sheet.getRange("A2:O").setFontFamily("Arial").setFontSize(9).setFontColor("#444444");
+    sheet.setColumnWidth(16, 70);  // Status
+    sheet.setColumnWidth(17, 90);  // Activity
+    sheet.getRange("A2:Q").setFontFamily("Arial").setFontSize(9).setFontColor("#444444");
     sheet.getRange("A2:A").setNumberFormat("dd/MM/yyyy");
+    sheet.getRange("Q2:Q").setNumberFormat("dd/MM/yyyy");
   }
   return sheet;
 }
@@ -423,6 +714,9 @@ function autoFormatSheets_(ss) {
       .setFontFamily("Arial").setFontSize(9).setFontColor("#333333")
       .setFontWeight("normal").setBackground("#ffffff");
     s.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy");
+    // The page reads dates as day/month/year, whatever the sheet's locale
+    var activityCol = getHeaders_().indexOf("Activity") + 1;
+    if (lastCol >= activityCol) s.getRange(2, activityCol, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy");
   }
 }
 
@@ -464,7 +758,7 @@ function updateSummary_(ss, master) {
   sheet.getRange(row, 1, 1, 2).merge();
   row += 2;
 
-  sheet.getRange(row, 1).setValue("Total incidents:").setFontWeight("bold");
+  sheet.getRange(row, 1).setValue("Total records:").setFontWeight("bold");
   sheet.getRange(row, 2).setValue(data.length);
   row++;
   sheet.getRange(row, 1).setValue("Last updated:").setFontWeight("bold");
@@ -540,7 +834,7 @@ function setupSheets() {
   getOrCreateSheet_(ss, MASTER_SHEET, getHeaders_());
   SpreadsheetApp.getUi().alert(
     "Setup complete! (script " + SCRIPT_VERSION + ")\n\n" +
-    "1. Run 'fetchIncidents' — the first run backfills ~2,250 AIAAIC records\n" +
+    "1. Run 'fetchIncidents' — the first run backfills ~2,250 AIAAIC records and ~570 DAIL cases\n" +
     "2. Run 'createTwelveHourTrigger' to automate"
   );
 }
@@ -631,18 +925,21 @@ function rebuildAiidRows() {
   );
 }
 
-// Fetch both sources and log counts without writing — debugging aid
+// Fetch every source and log counts without writing — debugging aid
 function testSources() {
-  var a = [], b = [];
+  var a = [], b = [], c = [];
   try { a = fetchAiaaic_(); } catch (e) { Logger.log("AIAAIC: " + e.message); }
   try { b = fetchAiid_(); } catch (e) { Logger.log("AIID: " + e.message); }
-  Logger.log("AIAAIC: " + a.length + " | AIID: " + b.length);
+  try { c = fetchDail_() || []; } catch (e) { Logger.log("DAIL: " + e.message); }
+  Logger.log("AIAAIC: " + a.length + " | AIID: " + b.length + " | DAIL: " + c.length);
   if (a.length) Logger.log("AIAAIC first: " + a[0].id + " — " + a[0].headline);
   if (b.length) Logger.log("AIID first: " + b[0].id + " — " + b[0].headline);
+  if (c.length) Logger.log("DAIL first: " + c[0].id + " — " + c[0].headline);
   SpreadsheetApp.getUi().alert(
     "Source test (script " + SCRIPT_VERSION + ")\n\n" +
     "AIAAIC records: " + a.length + "\n" +
-    "AIID reports: " + b.length + "\n\n" +
+    "AIID reports: " + b.length + "\n" +
+    "DAIL cases: " + c.length + "\n\n" +
     "Check Apps Script logs for samples."
   );
 }

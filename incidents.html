@@ -74,6 +74,7 @@
       /* Source identities — deliberately distinct */
       --src-aiaaic: #1F6F8B;   /* petrol blue — the curated registry */
       --src-aiid: #C1502E;     /* burnt sienna — the report ticker */
+      --src-dail: #6B3A7D;     /* plum — the court docket */
     }
 
     body {
@@ -230,6 +231,9 @@
     .src-chip.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
     .src-chip.c-aiaaic.active { background: var(--src-aiaaic); border-color: var(--src-aiaaic); }
     .src-chip.c-aiid.active { background: var(--src-aiid); border-color: var(--src-aiid); }
+    .src-chip.c-dail.active { background: var(--src-dail); border-color: var(--src-dail); }
+
+    .filter-group[hidden] { display: none; }
 
     .filter-select {
       border: 1px solid var(--border-light);
@@ -257,6 +261,64 @@
       font-family: inherit;
       color: var(--text-body);
       width: 220px;
+    }
+
+    /* ── DAIL view: themes, status, order ─────────── */
+    .dail-panel {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.9rem 2rem 0;
+    }
+
+    .dail-panel[hidden] { display: none; }
+
+    .theme-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .theme-row .filter-label {
+      flex: none;
+      line-height: 1.65rem;
+    }
+
+    .theme-strip {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    /* Same pill as the Headlines filters */
+    .theme-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 1.65rem;
+      background: var(--white);
+      color: var(--text-body);
+      border: 1px solid var(--border-light);
+      padding: 0 0.6rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+
+    .theme-pill:hover { background: var(--cream-dark); border-color: var(--navy-mid); color: var(--navy); }
+    .theme-pill.active { background: var(--src-dail); border-color: var(--src-dail); color: var(--white); }
+    .theme-pill:focus-visible { outline: 2px solid var(--navy); outline-offset: -2px; }
+    .theme-pill .count { font-weight: 700; margin-left: 0.2rem; opacity: 0.7; }
+
+    .dail-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin-top: 0.65rem;
     }
 
     /* ── Stats & attribution ──────────────────────── */
@@ -412,6 +474,37 @@
     .inc-meta a { color: var(--text-muted); text-decoration: underline; }
     .inc-meta a:hover { color: var(--src); }
 
+    /* DAIL anatomy: court + status + themes + issues */
+    .inc-row.src-dail { --src: var(--src-dail); background: rgba(107, 58, 125, 0.035); }
+
+    .inc-status {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.1rem 0.45rem;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+    }
+
+    .inc-status.is-active { color: var(--src); }
+    .inc-status.is-inactive { color: var(--text-muted); }
+
+    .inc-court { font-size: 0.72rem; color: var(--text-body); }
+
+    /* Newer cases describe the AI system in a sentence: two lines at most */
+    .src-dail .inc-actors {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 720px;
+    }
+
+    /* Theme chips on a lawsuit filter the list to that theme */
+    button.inc-chip { font-family: inherit; background: none; cursor: pointer; }
+    button.inc-chip:hover { border-color: var(--src); background: color-mix(in srgb, var(--src) 8%, transparent); }
+
     .empty {
       padding: 4rem 1rem;
       text-align: center;
@@ -441,6 +534,21 @@
       .ledger-wrap { padding: 1rem 1.25rem 3rem; }
       .search-input { width: 100%; }
       .inc-headline { font-size: 1rem; }
+      .dail-panel { padding: 0.75rem 1.25rem 0; }
+      /* Phone: the themes are one strip you swipe sideways, as on Headlines */
+      .theme-row { flex-direction: column; align-items: stretch; gap: 0.2rem; }
+      .theme-row .filter-label { line-height: 1.5; }
+      .theme-strip {
+        flex: none;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        padding-right: 1.5rem;
+        -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+        mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+      }
+      .theme-strip::-webkit-scrollbar { display: none; }
     }
   </style>
 </head>
@@ -448,9 +556,9 @@
 
   <header>
     <div class="header-inner">
-      <div class="header-eyebrow">News Tracker <span class="header-version">v3.31</span></div>
+      <div class="header-eyebrow">News Tracker <span class="header-version">v3.32</span></div>
       <h1>AI Incidents</h1>
-      <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database</p>
+      <p class="header-subtitle">An accountability ledger: documented AI incidents and controversies, drawn from the AIAAIC Repository and the AI Incident Database, and the lawsuits over AI tracked by GW's Database of AI Litigation</p>
       <div class="header-accent"></div>
       <nav class="site-nav">
         <a class="site-tab" href="index.html" aria-label="Headlines" title="Headlines">
@@ -480,12 +588,13 @@
         <button class="src-chip active" data-src="all">All</button>
         <button class="src-chip c-aiaaic" data-src="AIAAIC">AIAAIC</button>
         <button class="src-chip c-aiid" data-src="AIID">AIID</button>
+        <button class="src-chip c-dail" data-src="DAIL">DAIL</button>
       </div>
       <div class="filter-group">
-        <span class="filter-label">Year occurred</span>
+        <span class="filter-label" id="yearLabel">Year occurred</span>
         <select class="filter-select" id="yearSelect"><option value="all">All</option></select>
       </div>
-      <div class="filter-group">
+      <div class="filter-group" id="sectorGroup">
         <span class="filter-label">Sector</span>
         <select class="filter-select" id="sectorSelect"><option value="all">All</option></select>
       </div>
@@ -495,9 +604,35 @@
     </div>
   </div>
 
+  <!-- Lawsuits only: DAIL's own labels grouped into themes -->
+  <div class="dail-panel" id="dailPanel" hidden>
+    <div class="theme-row">
+      <span class="filter-label">Theme</span>
+      <div class="theme-strip" id="themeStrip"></div>
+    </div>
+    <div class="dail-controls">
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <select class="filter-select" id="statusSelect">
+          <option value="all">All</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Order</span>
+        <select class="filter-select" id="sortSelect">
+          <option value="added">Newest additions</option>
+          <option value="activity">Latest court activity</option>
+          <option value="filed">Most recently filed</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <div class="stats-bar">
     <span class="stats-count" id="statsCount">Loading...</span><span class="demo-note" id="demoNote" style="display:none;">Demo content — publish the Incidents sheet as CSV and set INCIDENTS_CSV_URL to go live</span>
-    <div class="attribution">Data: <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) · <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a></div>
+    <div class="attribution">Data: <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) · <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a> · <a href="https://blogs.gwu.edu/law-eti/ai-litigation-database/" target="_blank" rel="noopener">Database of AI Litigation</a> (GW Ethical Tech Initiative)</div>
   </div>
 
   <div class="ledger-wrap">
@@ -505,7 +640,7 @@
   </div>
 
   <footer>
-    <strong>AI Incidents</strong> — Records from the <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) and the <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a>, collected via Google Sheets
+    <strong>AI Incidents</strong> — Records from the <a href="https://www.aiaaic.org/aiaaic-repository" target="_blank" rel="noopener">AIAAIC Repository</a> (CC BY-SA 4.0) and the <a href="https://incidentdatabase.ai" target="_blank" rel="noopener">AI Incident Database</a>, and cases from the <a href="https://blogs.gwu.edu/law-eti/ai-litigation-database/" target="_blank" rel="noopener">Database of AI Litigation</a> (GW Ethical Tech Initiative), collected via Google Sheets
   </footer>
 
   <script>
@@ -519,7 +654,41 @@
     let currentYear = 'all';
     let currentSector = 'all';
     let currentQuery = '';
+    let currentTheme = null;      // DAIL view only
+    let currentStatus = 'all';    // DAIL view only
+    let currentSort = 'added';    // DAIL view only
     let isDemo = false;
+
+    // ── DAIL themes ────────────────────────────────
+    // DAIL labels each case with its own words: 237 issue labels (95
+    // used once) and 55 application areas, with near-duplicates such as
+    // "Infringement" and "Copyright Infringement". These themes group
+    // them so a case can be found by what it is about. A case can sit in
+    // several; on the Nov 2026 list they covered 559 of 568 cases. The
+    // themes are computed here, so retuning them needs no script change.
+    const DAIL_THEMES = [
+      ['Copyright & IP', /copyright|intellectual property|\binfringement|fair use|digital millennium|dmca|1202|authorship|inventor|patent|trademark|trade dress|licens|trade secrets?\b(?!y)|misappropriation/i],
+      ['Privacy & surveillance', /privacy|facial recognition|biometric|bipa|personally identifiable|wiretap|electronic (privacy )?communications|invasion|cipa|seclusion|surveillance|search and seizure|data protection|gdpr|tracking|2510/i],
+      ['Harm & safety', /product liability|design defect|failure to warn|wrongful death|personal injury|autonomous vehicle|self-harm|suicide|emotional distress|chatbot|sexual abuse|property damage|intentional tort|strict liability/i],
+      ['Discrimination & civil rights', /civil rights|use of race|discriminat|\bbias|fair housing|\bhousing|title vii|equal protection|disparate|disabilit(y|ies)(?! benefits)|americans with disabilities/i],
+      ['Government & due process', /due process|criminal justice|sentencing|detention|public benefits|unemployment|disabilities benefits|law enforcement|foia|lack of human review|lack of remedy|constitutional|amendment|terrorism|immigration|administrative procedure|evidence|admissab|admissib|discovery|justiciab/i],
+      ['Work & employment', /employment|hiring|termination|performance assessment|labor|labour|wage|worker|union/i],
+      ['Consumer protection & fraud', /fraud|udap|unfair or deceptive|deceptive|misrepresentation|consumer|false advertising|investment|trading|securities|failure to disclos/i],
+      ['Competition & contracts', /antitrust|sherman|clayton|monopol|breach of contract|terms of service|licensing agreement|contract|corporate|fiduciary|unfair competition/i],
+      ['Speech & misinformation', /defamation|libel|misinformation|section 230|content moderation|first amendment|free speech|social media|deepfake|publicity|likeness|election/i],
+    ];
+
+    // Areas, issues, the AI system, and the description when there is one
+    function dailThemes(x) {
+      const text = [x.technology, x.harms, x.system, x.snippet].join(' | ');
+      return DAIL_THEMES.filter(([, re]) => re.test(text)).map(([name]) => name);
+    }
+
+    const SORT_NOTES = {
+      added: 'newest additions first',
+      activity: 'latest court activity first',
+      filed: 'most recently filed first',
+    };
 
     // ── Utilities ──────────────────────────────────
     function escapeHtml(str) {
@@ -574,9 +743,12 @@
           jurisdiction: row[11] || '',
           sector: row[12] || '',
           harms: row[13] || '',
-          snippet: decodeEntities(row[14] || '')
+          snippet: decodeEntities(row[14] || ''),
+          status: row[15] || '',            // DAIL: Active / Inactive
+          activity: parseDate(row[16] || '') // DAIL: latest court activity
         });
       }
+      items.forEach(x => { x.themes = x.source === 'DAIL' ? dailThemes(x) : []; });
       // Keep rows with no date — some AIAAIC records are genuinely
       // undated; they display as "Undated" and sort last.
       return items.filter(x => x.headline && x.source);
@@ -616,6 +788,9 @@
       ySel.value = currentYear;
       if (ySel.value !== currentYear) { currentYear = 'all'; ySel.value = 'all'; }
 
+      // No lawsuits until the v3.32 script has filled them in
+      document.querySelector('.src-chip.c-dail').hidden = !allIncidents.some(x => x.source === 'DAIL');
+
       const sSel = document.getElementById('sectorSelect');
       sSel.innerHTML = '<option value="all">All</option>' +
         [...sectors].sort().map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
@@ -623,8 +798,45 @@
       if (sSel.value !== currentSector) { currentSector = 'all'; sSel.value = 'all'; }
     }
 
-    // ── Rendering — two distinct row anatomies ─────
+    // ── Rendering — a distinct row anatomy per source ─
+    const fmtDay = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    // "U.S. District Court for the Northern District of Illinois (N.D. Ill.)" → "N.D. Ill."
+    function shortCourt(court) {
+      const m = String(court || '').match(/\(([^()]+)\)\s*$/);
+      return m ? m[1] : String(court || '');
+    }
+
+    function dailRowHtml(x) {
+      const filed = isNaN(x.date.getTime()) ? 'Filing date not recorded' : 'Filed ' + fmtDay(x.date);
+      const status = x.status
+        ? `<span class="inc-status ${x.status === 'Active' ? 'is-active' : 'is-inactive'}">${escapeHtml(x.status)}</span>` : '';
+      const court = shortCourt(x.jurisdiction);
+      const chips = x.themes
+        .map(t => `<button type="button" class="inc-chip" data-theme="${escapeHtml(t)}" title="Show every ${escapeHtml(t)} case">${escapeHtml(t)}</button>`).join('');
+      const meta = [
+        x.technology ? 'Areas: ' + escapeHtml(x.technology) : '',
+        isNaN(x.activity.getTime()) ? '' : 'Latest activity ' + fmtDay(x.activity),
+      ].filter(Boolean).join(' · ');
+      return `
+      <article class="inc-row src-dail">
+        <div class="inc-top">
+          <span class="inc-badge">DAIL</span>
+          <span class="inc-when">${escapeHtml(filed)}</span>
+          ${status}
+          ${court ? `<span class="inc-court">${escapeHtml(court)}</span>` : ''}
+        </div>
+        <h2 class="inc-headline"><a href="${escapeHtml(safeLink(x.link))}" target="_blank" rel="noopener">${escapeHtml(x.headline)}</a></h2>
+        ${x.system ? `<div class="inc-actors" title="${escapeHtml(x.system)}">AI system: ${escapeHtml(x.system)}</div>` : ''}
+        ${x.snippet ? `<p class="inc-snippet">${escapeHtml(x.snippet)}</p>` : ''}
+        ${chips ? `<div class="inc-chips">${chips}</div>` : ''}
+        ${x.harms ? `<div class="inc-harms"><strong>Issues:</strong> ${escapeHtml(x.harms)}</div>` : ''}
+        ${meta ? `<div class="inc-meta">${meta}</div>` : ''}
+      </article>`;
+    }
+
     function rowHtml(x) {
+      if (x.source === 'DAIL') return dailRowHtml(x);
       const isAiaaic = x.source === 'AIAAIC';
       const cls = isAiaaic ? 'src-aiaaic' : 'src-aiid';
       const undated = isNaN(x.date.getTime());
@@ -668,12 +880,41 @@
       </article>`;
     }
 
+    // The lawsuits view swaps Sector (AIAAIC's) for themes, status and order
+    function syncView() {
+      const dail = currentSrc === 'DAIL';
+      document.getElementById('dailPanel').hidden = !dail;
+      document.getElementById('sectorGroup').hidden = dail;
+      document.getElementById('yearLabel').textContent = dail ? 'Year filed' : 'Year occurred';
+      document.getElementById('searchInput').placeholder = dail ? 'Search lawsuits…' : 'Search incidents…';
+    }
+
+    // Theme pills count the cases left by the other filters, so a search
+    // for "Character.AI" shows which themes its cases fall under.
+    let themeSig = '';
+    function renderThemes(cases) {
+      const counts = new Map(DAIL_THEMES.map(([name]) => [name, 0]));
+      cases.forEach(x => x.themes.forEach(t => counts.set(t, counts.get(t) + 1)));
+      const list = Array.from(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      const strip = document.getElementById('themeStrip');
+      // Rebuild only when counts change, so a strip scrolled sideways on
+      // a phone keeps its place when one of its pills is tapped.
+      const sig = JSON.stringify(list);
+      if (sig !== themeSig) {
+        strip.innerHTML = list.map(([name, n]) =>
+          `<button type="button" class="theme-pill" data-theme="${escapeHtml(name)}">${escapeHtml(name)}<span class="count">${n}</span></button>`).join('');
+        themeSig = sig;
+      }
+      strip.querySelectorAll('.theme-pill').forEach(p => p.classList.toggle('active', p.dataset.theme === currentTheme));
+    }
+
     function filterAndRender() {
+      const dailView = currentSrc === 'DAIL';
       let filtered = allIncidents;
 
       if (currentSrc !== 'all') filtered = filtered.filter(x => x.source === currentSrc);
       if (currentYear !== 'all') filtered = filtered.filter(x => String(x.date.getFullYear()) === currentYear);
-      if (currentSector !== 'all') filtered = filtered.filter(x => String(x.sector).includes(currentSector));
+      if (currentSector !== 'all' && !dailView) filtered = filtered.filter(x => String(x.sector).includes(currentSector));
       if (currentQuery) {
         const q = currentQuery.toLowerCase();
         filtered = filtered.filter(x =>
@@ -681,41 +922,88 @@
            x.technology + ' ' + x.jurisdiction + ' ' + x.sector + ' ' + x.harms + ' ' + x.snippet)
             .toLowerCase().includes(q));
       }
+      if (dailView) {
+        if (currentStatus !== 'all') filtered = filtered.filter(x => x.status === currentStatus);
+        renderThemes(filtered);
+        if (currentTheme) filtered = filtered.filter(x => x.themes.includes(currentTheme));
+      }
 
       // AIAAIC dates a record by the year it occurred, so its newest
       // additions land in 2025 or 2021 as often as 2026. Its IDs run in
       // the order records are added, so the AIAAIC view sorts by ID —
       // newest first, like the "Latest entries" list on aiaaic.org.
+      // DAIL's case numbers run the same way.
       const idNum = x => parseInt(String(x.id).replace(/\D/g, ''), 10) || 0;
-      const byAdded = currentSrc === 'AIAAIC';
+      const time = d => isNaN(d.getTime()) ? -Infinity : d.getTime();
+      const byAdded = currentSrc === 'AIAAIC' || (dailView && currentSort === 'added');
+      const byActivity = dailView && currentSort === 'activity';
       filtered = filtered.slice().sort((a, b) => {
         if (byAdded) return idNum(b) - idNum(a);
-        const at = isNaN(a.date.getTime()) ? -Infinity : a.date.getTime();
-        const bt = isNaN(b.date.getTime()) ? -Infinity : b.date.getTime();
-        return (bt - at) || (idNum(b) - idNum(a));
+        const da = byActivity ? a.activity : a.date, db = byActivity ? b.activity : b.date;
+        return (time(db) - time(da)) || (idNum(b) - idNum(a));
       });
 
       const ledger = document.getElementById('ledger');
       ledger.innerHTML = filtered.length
         ? filtered.map(rowHtml).join('')
-        : '<div class="empty">No incidents match these filters.</div>';
+        : `<div class="empty">No ${dailView ? 'lawsuits' : 'records'} match these filters.</div>`;
 
-      const nA = filtered.filter(x => x.source === 'AIAAIC').length;
-      const nB = filtered.length - nA;
-      document.getElementById('statsCount').textContent =
-        filtered.length + (filtered.length === 1 ? ' incident' : ' incidents') +
-        ' · ' + nA + ' AIAAIC · ' + nB + ' AIID' +
-        (byAdded && filtered.length > 1 ? ' · newest additions first' : '');
+      const n = filtered.length;
+      const many = n > 1;
+      let stats;
+      if (dailView) {
+        stats = n + (n === 1 ? ' lawsuit' : ' lawsuits') + (currentTheme ? ' · ' + currentTheme : '') +
+          (many ? ' · ' + SORT_NOTES[currentSort] : '');
+      } else if (currentSrc === 'all') {
+        const per = s => filtered.filter(x => x.source === s).length;
+        const hasDail = !document.querySelector('.src-chip.c-dail').hidden;
+        stats = n + (n === 1 ? ' entry' : ' entries') +
+          ' · ' + per('AIAAIC') + ' AIAAIC · ' + per('AIID') + ' AIID' + (hasDail ? ' · ' + per('DAIL') + ' DAIL' : '');
+      } else {
+        stats = n + (n === 1 ? ' incident' : ' incidents') + (byAdded && many ? ' · newest additions first' : '');
+      }
+      document.getElementById('statsCount').textContent = stats;
     }
 
     // ── Filter events ──────────────────────────────
+    function selectSource(src) {
+      document.querySelectorAll('.src-chip').forEach(c => c.classList.toggle('active', c.dataset.src === src));
+      currentSrc = src;
+      syncView();
+      filterAndRender();
+    }
+
     document.querySelectorAll('.src-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('.src-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        currentSrc = chip.dataset.src;
-        filterAndRender();
-      });
+      chip.addEventListener('click', () => selectSource(chip.dataset.src));
+    });
+
+    // One theme at a time; tapping the picked theme again clears it
+    document.getElementById('themeStrip').addEventListener('click', e => {
+      const pill = e.target.closest('.theme-pill');
+      if (!pill) return;
+      currentTheme = currentTheme === pill.dataset.theme ? null : pill.dataset.theme;
+      filterAndRender();
+    });
+
+    // A theme chip on a lawsuit opens the lawsuits view on that theme
+    document.getElementById('ledger').addEventListener('click', e => {
+      const chip = e.target.closest('button.inc-chip[data-theme]');
+      if (!chip) return;
+      currentTheme = chip.dataset.theme;
+      selectSource('DAIL');
+      // Back up to where the filter bar starts sticking, so the themes show
+      const top = document.querySelector('header').offsetHeight;
+      if (window.scrollY > top) window.scrollTo({ top });
+    });
+
+    document.getElementById('statusSelect').addEventListener('change', e => {
+      currentStatus = e.target.value;
+      filterAndRender();
+    });
+
+    document.getElementById('sortSelect').addEventListener('change', e => {
+      currentSort = e.target.value;
+      filterAndRender();
     });
 
     document.getElementById('yearSelect').addEventListener('change', e => {
@@ -829,7 +1117,12 @@
         { date: d(3), source: 'AIID', id: '#1377', headline: 'Chatbot companion implicated in teenager self-harm case', link: 'https://incidentdatabase.ai', citeLink: 'https://incidentdatabase.ai/cite/1377', outlet: 'reuters.com', deployer: '', developer: '', system: '', technology: '', jurisdiction: '', sector: '', harms: '', snippet: 'Regulators opened an inquiry into a companion chatbot after a family alleged the system encouraged harmful behavior over several months of use.' },
         { date: new Date(2025, 0, 1), source: 'AIAAIC', id: 'AIAAIC2101', headline: 'Facial recognition misidentification leads to wrongful arrest', link: 'https://www.aiaaic.org/aiaaic-repository', citeLink: '', outlet: '', deployer: 'Metropolitan police department', developer: 'Vendor', system: 'Face matching system', technology: 'Facial recognition', jurisdiction: 'USA', sector: 'Govt - police', harms: 'Dignity loss; Institutional trust loss', snippet: '' },
         { date: new Date(2024, 0, 1), source: 'AIAAIC', id: 'AIAAIC1850', headline: 'Deepfake robocalls impersonate presidential candidate before primary', link: 'https://www.aiaaic.org/aiaaic-repository', citeLink: '', outlet: '', deployer: 'Political consultancy', developer: 'Voice AI vendor', system: 'Voice cloning system', technology: 'Deepfake - audio', jurisdiction: 'USA', sector: 'Politics', harms: 'Mis/disinformation; Electoral interference', snippet: '' },
+        { date: d(40), source: 'DAIL', id: 'DAIL-631', headline: 'A.D. v. Character Technologies, Inc.', link: 'https://blogs.gwu.edu/law-eti/ai-litigation-database/case-detail-page/?pid=631', citeLink: '', outlet: '', deployer: '', developer: '', system: 'Character.AI', technology: 'Chatbots, Generative AI', jurisdiction: 'N.D. Cal.', sector: '', harms: 'Failure to Warn', snippet: '', status: 'Active', activity: d(40) },
       ];
+      allIncidents.forEach(x => {
+        x.themes = x.source === 'DAIL' ? dailThemes(x) : [];
+        if (!x.activity) x.activity = new Date(NaN);
+      });
       document.getElementById('demoNote').style.display = '';
       buildFilterOptions();
       filterAndRender();
